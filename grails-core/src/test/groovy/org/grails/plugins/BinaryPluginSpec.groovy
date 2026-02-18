@@ -20,15 +20,12 @@
 package org.grails.plugins
 
 import grails.core.DefaultGrailsApplication
-import org.grails.plugins.BinaryGrailsPlugin
-import org.grails.plugins.BinaryGrailsPluginDescriptor
+import org.springframework.context.support.GenericApplicationContext
+import org.springframework.core.env.MapPropertySource
 import org.springframework.core.io.ByteArrayResource
-import org.springframework.core.io.FileSystemResource
 import org.springframework.core.io.Resource
 import spock.lang.Shared
 import spock.lang.Specification
-
-import java.nio.file.Files
 
 class BinaryPluginSpec extends Specification {
 
@@ -72,67 +69,57 @@ class BinaryPluginSpec extends Specification {
             cssResource == null
     }
 
-    def "Test plugin with both plugin.yml and plugin.groovy throws exception"() {
+    def "Test getPropertySource returns null when no mainContext is set on GrailsApplication"() {
         when:
         def descriptor = new BinaryGrailsPluginDescriptor(new ByteArrayResource(testBinary.getBytes('UTF-8')), ['org.grails.plugins.TestBinaryResource'])
-        MockConfigBinaryGrailsPlugin.YAML_EXISTS = true
-        MockConfigBinaryGrailsPlugin.GROOVY_EXISTS = true
-        new MockConfigBinaryGrailsPlugin(descriptor)
+        def binaryPlugin = new BinaryGrailsPlugin(TestBinaryGrailsPlugin, descriptor, new DefaultGrailsApplication())
 
         then:
-        thrown(RuntimeException)
+        binaryPlugin.getPropertySource() == null
     }
 
-    def "Test plugin with only plugin.yml"() {
-        when:
+    def "Test getPropertySource looks up plugin.yml from environment"() {
+        given:
         def descriptor = new BinaryGrailsPluginDescriptor(new ByteArrayResource(testBinary.getBytes('UTF-8')), ['org.grails.plugins.TestBinaryResource'])
-        MockConfigBinaryGrailsPlugin.YAML_EXISTS = true
-        MockConfigBinaryGrailsPlugin.GROOVY_EXISTS = false
-        def binaryPlugin = new MockConfigBinaryGrailsPlugin(descriptor)
+        def grailsApp = new DefaultGrailsApplication()
+        def binaryPlugin = new BinaryGrailsPlugin(TestBinaryGrailsPlugin, descriptor, grailsApp)
 
-        then:
-        binaryPlugin.propertySource.getProperty('foo') == "bar"
-    }
+        def appCtx = new GenericApplicationContext()
+        def ymlPropertySource = new MapPropertySource('testBinary-plugin.yml', [foo: 'bar'])
+        appCtx.environment.propertySources.addLast(ymlPropertySource)
 
-    def "Test plugin with only plugin.groovy"() {
         when:
-        def descriptor = new BinaryGrailsPluginDescriptor(new ByteArrayResource(testBinary.getBytes('UTF-8')), ['org.grails.plugins.TestBinaryResource'])
-        MockConfigBinaryGrailsPlugin.YAML_EXISTS = false
-        MockConfigBinaryGrailsPlugin.GROOVY_EXISTS = true
-        def binaryPlugin = new MockConfigBinaryGrailsPlugin(descriptor)
+        grailsApp.setMainContext(appCtx)
 
         then:
-        binaryPlugin.propertySource.getProperty('bar') == "foo"
+        binaryPlugin.getPropertySource() != null
+        binaryPlugin.getPropertySource().getProperty('foo') == 'bar'
     }
 
-}
+    def "Test getPropertySource looks up plugin.groovy from environment"() {
+        given:
+        def descriptor = new BinaryGrailsPluginDescriptor(new ByteArrayResource(testBinary.getBytes('UTF-8')), ['org.grails.plugins.TestBinaryResource'])
+        def grailsApp = new DefaultGrailsApplication()
+        def binaryPlugin = new BinaryGrailsPlugin(TestBinaryGrailsPlugin, descriptor, grailsApp)
 
-class MockConfigBinaryGrailsPlugin extends BinaryGrailsPlugin {
-    static Boolean YAML_EXISTS = false
-    static Boolean GROOVY_EXISTS = false
+        def appCtx = new GenericApplicationContext()
+        def groovyPropertySource = new MapPropertySource('testBinary-plugin.groovy', [bar: 'foo'])
+        appCtx.environment.propertySources.addLast(groovyPropertySource)
 
-    MockConfigBinaryGrailsPlugin(BinaryGrailsPluginDescriptor descriptor) {
-        super(TestBinaryGrailsPlugin, descriptor, new DefaultGrailsApplication())
+        when:
+        grailsApp.setMainContext(appCtx)
+
+        then:
+        binaryPlugin.getPropertySource() != null
+        binaryPlugin.getPropertySource().getProperty('bar') == 'foo'
     }
 
-    protected Resource getConfigurationResource(Class<?> pluginClass, String path) {
-        File tempDir = Files.createTempDirectory("MockConfigBinaryGrailsPlugin").toFile()
-        if (YAML_EXISTS && path == PLUGIN_YML_PATH) {
-            File file = new File(tempDir, "plugin.yml")
-            file.write("foo: bar")
-            return new FileSystemResource(file)
-        }
-        if (GROOVY_EXISTS && path == PLUGIN_GROOVY_PATH) {
-            File file = new File(tempDir, "plugin.groovy")
-            file.write("bar = 'foo'")
-            return new FileSystemResource(file)
-        }
-        return null
+    def "Test mutual exclusion of plugin.yml and plugin.groovy is enforced by EPP"() {
+        expect: "Constructor no longer throws when both config files exist - validation moved to GrailsPluginEnvironmentPostProcessor"
+        def descriptor = new BinaryGrailsPluginDescriptor(new ByteArrayResource(testBinary.getBytes('UTF-8')), ['org.grails.plugins.TestBinaryResource'])
+        new BinaryGrailsPlugin(TestBinaryGrailsPlugin, descriptor, new DefaultGrailsApplication()) != null
     }
 
-    public String getVersion() {
-        super.getVersion()
-    }
 }
 
 class TestBinaryGrailsPlugin {

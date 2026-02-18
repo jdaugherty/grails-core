@@ -18,48 +18,39 @@
  */
 package org.grails.plugins;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 import org.springframework.context.ApplicationContext;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 
 import grails.core.GrailsApplication;
 import grails.core.support.ParentApplicationContextAware;
-import org.grails.core.exceptions.GrailsConfigurationException;
-import org.grails.io.support.SpringIOUtils;
 
 /**
- * Loads core plugin classes. Contains functionality moved in from <code>DefaultGrailsPluginManager</code>.
+ * Loads core plugin classes. Contains functionality moved in from
+ * {@code DefaultGrailsPluginManager}.
+ *
+ * <p>All plugin descriptor scanning and XML parsing is delegated to
+ * {@link GrailsPluginDiscovery#scanPluginDescriptorResources}, the canonical
+ * shared implementation that is also used by
+ * {@link grails.boot.config.GrailsPluginEnvironmentPostProcessor}. This
+ * ensures that both code paths discover the same plugins from the same
+ * {@code META-INF/grails-plugin.xml} descriptors.</p>
  *
  * @author Graeme Rocher
  * @author Phil Zoio
  */
-public class CorePluginFinder implements ParentApplicationContextAware {
+public class CorePluginFinder {
 
     private static final Logger LOG = LoggerFactory.getLogger(CorePluginFinder.class);
-    public static final String CORE_PLUGIN_PATTERN = "META-INF/grails-plugin.xml";
 
     private final Set<Class<?>> foundPluginClasses = new HashSet<>();
-    @SuppressWarnings("unused")
     private final GrailsApplication application;
     @SuppressWarnings("rawtypes")
     private final Map<Class, BinaryGrailsPluginDescriptor> binaryDescriptors = new HashMap<>();
@@ -73,75 +64,45 @@ public class CorePluginFinder implements ParentApplicationContextAware {
         // just in case we try to use this twice
         foundPluginClasses.clear();
 
-        try {
-            Resource[] resources = resolvePluginResources();
-            if (resources.length > 0) {
-                loadCorePluginsFromResources(resources);
-            } else {
-                throw new IllegalStateException("Grails was unable to load plugins dynamically. This is normally a problem with the container class loader configuration, see troubleshooting and FAQ for more info. ");
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException("WARNING: I/O exception loading core plugin dynamically, attempting static load. This is usually due to deployment onto containers with unusual classloading setups. Message: " + e.getMessage());
+        List<GrailsPluginDiscovery.PluginDescriptorInfo> descriptors =
+                GrailsPluginDiscovery.scanPluginDescriptorResources(application.getClassLoader());
+
+        if (descriptors.isEmpty()) {
+            throw new IllegalStateException(
+                    "Grails was unable to load plugins dynamically. This is normally a " +
+                    "problem with the container class loader configuration, see " +
+                    "troubleshooting and FAQ for more info.");
         }
-        return foundPluginClasses.toArray(new Class[foundPluginClasses.size()]);
+
+        LOG.debug("Attempting to load [{}] core plugin descriptors", descriptors.size());
+
+        for (GrailsPluginDiscovery.PluginDescriptorInfo descriptor : descriptors) {
+            for (String pluginClassName : descriptor.pluginTypes()) {
+                Class<?> pluginClass = attemptCorePluginClassLoad(pluginClassName);
+                if (pluginClass != null) {
+                    foundPluginClasses.add(pluginClass);
+                    binaryDescriptors.put(pluginClass,
+                            new BinaryGrailsPluginDescriptor(
+                                    descriptor.xmlResource(),
+                                    descriptor.providedClassNames()));
+                }
+            }
+        }
+
+        return foundPluginClasses.toArray(new Class[0]);
     }
 
     public BinaryGrailsPluginDescriptor getBinaryDescriptor(Class<?> pluginClass) {
         return binaryDescriptors.get(pluginClass);
     }
 
-    private Resource[] resolvePluginResources() throws IOException {
-        Enumeration<URL> resources = application.getClassLoader().getResources(CORE_PLUGIN_PATTERN);
-        List<Resource> resourceList = new ArrayList<>();
-        while (resources.hasMoreElements()) {
-            URL url = resources.nextElement();
-            resourceList.add(new UrlResource(url));
-        }
-        return resourceList.toArray(new Resource[resourceList.size()]);
-    }
-
-    @SuppressWarnings("rawtypes")
-    private void loadCorePluginsFromResources(Resource[] resources) throws IOException {
-
-        LOG.debug("Attempting to load [" + resources.length + "] core plugins");
-        try {
-            SAXParser saxParser = SpringIOUtils.newSAXParser();
-            for (Resource resource : resources) {
-                InputStream input = null;
-
-                try {
-                    input = resource.getInputStream();
-                    PluginHandler ph = new PluginHandler();
-                    saxParser.parse(input, ph);
-
-                    for (String pluginType : ph.pluginTypes) {
-                        Class<?> pluginClass = attemptCorePluginClassLoad(pluginType);
-                        if (pluginClass != null) {
-                            addPlugin(pluginClass);
-                            binaryDescriptors.put(pluginClass, new BinaryGrailsPluginDescriptor(resource, ph.pluginClasses));
-                        }
-                    }
-
-                } finally {
-                    if (input != null) {
-                        input.close();
-                    }
-                }
-            }
-        } catch (ParserConfigurationException e) {
-            throw new GrailsConfigurationException("XML parsing error loading core plugins: " + e.getMessage(), e);
-        } catch (SAXException e) {
-            throw new GrailsConfigurationException("XML parsing error loading core plugins: " + e.getMessage(), e);
-        }
-    }
-
     private Class<?> attemptCorePluginClassLoad(String pluginClassName) {
         try {
-            final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
             return classLoader.loadClass(pluginClassName);
         } catch (ClassNotFoundException e) {
-            LOG.warn("[GrailsPluginManager] Core plugin [" + pluginClassName +
-                    "] not found, resuming load without..");
+            LOG.warn("[GrailsPluginManager] Core plugin [{}] not found, resuming load without..",
+                    pluginClassName);
             if (LOG.isDebugEnabled()) {
                 LOG.debug(e.getMessage(), e);
             }
@@ -149,59 +110,4 @@ public class CorePluginFinder implements ParentApplicationContextAware {
         return null;
     }
 
-    private void addPlugin(Class<?> plugin) {
-        foundPluginClasses.add(plugin);
-    }
-
-    public void setParentApplicationContext(ApplicationContext parent) {
-    }
-
-    private enum PluginParseState {
-        PARSING, TYPE, RESOURCE
-    }
-
-    class PluginHandler extends DefaultHandler {
-        PluginParseState state = PluginParseState.PARSING;
-
-        List<String> pluginTypes = new ArrayList<>();
-        List<String> pluginClasses = new ArrayList<>();
-        private StringBuilder buff = new StringBuilder();
-
-        @Override
-        public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-            if (localName.equals("type")) {
-                state = PluginParseState.TYPE;
-                buff = new StringBuilder();
-            }
-            else if (localName.equals("resource")) {
-                state = PluginParseState.RESOURCE;
-                buff = new StringBuilder();
-            }
-        }
-
-        @Override
-        public void characters(char[] ch, int start, int length) throws SAXException {
-            switch (state) {
-                case TYPE:
-                    buff.append(String.valueOf(ch, start, length));
-                    break;
-                case RESOURCE:
-                    buff.append(String.valueOf(ch, start, length));
-                    break;
-            }
-        }
-
-        @Override
-        public void endElement(String uri, String localName, String qName) throws SAXException {
-            switch (state) {
-                case TYPE:
-                    pluginTypes.add(buff.toString());
-                    break;
-                case RESOURCE:
-                    pluginClasses.add(buff.toString());
-                    break;
-            }
-            state = PluginParseState.PARSING;
-        }
-    }
 }

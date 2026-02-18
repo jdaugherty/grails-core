@@ -39,7 +39,6 @@ import org.springframework.core.convert.converter.Converter
 import org.springframework.core.convert.support.ConfigurableConversionService
 import org.springframework.core.env.AbstractEnvironment
 import org.springframework.core.env.ConfigurableEnvironment
-import org.springframework.core.env.EnumerablePropertySource
 import org.springframework.core.io.Resource
 
 import grails.boot.GrailsApp
@@ -49,13 +48,11 @@ import grails.core.GrailsApplication
 import grails.core.GrailsApplicationClass
 import grails.core.GrailsApplicationLifeCycle
 import grails.plugins.DefaultGrailsPluginManager
-import grails.plugins.GrailsPlugin
 import grails.plugins.GrailsPluginManager
 import grails.spring.BeanBuilder
 import grails.util.Environment
 import grails.util.Holders
 import org.grails.config.NavigableMap
-import org.grails.config.PrefixedMapPropertySource
 import org.grails.config.PropertySourcesConfig
 import org.grails.core.exceptions.GrailsConfigurationException
 import org.grails.core.lifecycle.ShutdownOperations
@@ -134,6 +131,16 @@ class GrailsApplicationPostProcessor implements BeanDefinitionRegistryPostProces
         }
     }
 
+    /**
+     * Registers conversion service converters and creates the {@link PropertySourcesConfig}
+     * that backs {@code grailsApplication.config}.
+     *
+     * <p>Plugin configurations are loaded early by
+     * {@link GrailsPluginEnvironmentPostProcessor} and are already
+     * present in the environment's property sources by the time this method runs.
+     * This method simply creates the {@link PropertySourcesConfig} from whatever
+     * property sources exist in the environment.</p>
+     */
     protected void loadApplicationConfig() {
         org.springframework.core.env.Environment environment = applicationContext.getEnvironment()
         ConfigurableConversionService conversionService = null
@@ -160,18 +167,6 @@ class GrailsApplicationPostProcessor implements BeanDefinitionRegistryPostProces
                 })
             }
             def propertySources = environment.getPropertySources()
-            def plugins = pluginManager.allPlugins
-            if (plugins) {
-                for (GrailsPlugin plugin in plugins.reverse()) {
-                    def pluginPropertySource = plugin.propertySource
-                    if (pluginPropertySource) {
-                        if (pluginPropertySource instanceof EnumerablePropertySource) {
-                            propertySources.addLast(new PrefixedMapPropertySource("grails.plugins.$plugin.name", (EnumerablePropertySource) pluginPropertySource))
-                        }
-                        propertySources.addLast(pluginPropertySource)
-                    }
-                }
-            }
             def config = new PropertySourcesConfig(propertySources)
             if (conversionService != null) {
                 config.setConversionService(conversionService)

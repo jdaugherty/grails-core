@@ -263,6 +263,20 @@ public interface GrailsPlugin extends ApplicationContextAware, Comparable, Grail
      */
     String getDependentVersion(String name);
 
+    /**
+     * Returns the plugin's configuration as a {@link PropertySource}, looked up from the
+     * Spring {@link org.springframework.core.env.Environment} by naming convention.
+     *
+     * <p>Plugin configuration is loaded early in the Spring Boot lifecycle by
+     * {@code GrailsPluginEnvironmentPostProcessor} and registered as a
+     * property source named {@code <pluginName>-plugin.yml} or {@code <pluginName>-plugin.groovy}.
+     * This method retrieves that property source from the application context's environment.</p>
+     *
+     * @deprecated no longer used to populate plugin-specific configuration, see {@code GrailsPluginEnvironmentPostProcessor}
+     * @return the plugin's property source from the environment, or {@code null} if the
+     *         GrailsApplication main context is not yet available or no matching property source exists
+     */
+    @Deprecated(forRemoval = true)
     PropertySource<?> getPropertySource();
 
     /**

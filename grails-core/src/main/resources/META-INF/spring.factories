@@ -20,4 +20,5 @@
 org.springframework.boot.env.PropertySourceLoader=\
   org.grails.core.cfg.GroovyConfigPropertySourceLoader,\
   org.grails.config.yaml.YamlPropertySourceLoader
+org.springframework.boot.env.EnvironmentPostProcessor=grails.boot.config.GrailsPluginEnvironmentPostProcessor
 org.springframework.boot.SpringApplicationRunListener=grails.config.external.ExternalConfigRunListener

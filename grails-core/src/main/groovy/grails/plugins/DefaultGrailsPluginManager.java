@@ -243,82 +243,15 @@ public class DefaultGrailsPluginManager extends AbstractGrailsPluginManager {
             processDelayedEvictions();
         }
 
-        pluginList = sortPlugins(pluginList);
+        pluginList = GrailsPluginSorter.sort(
+                pluginList,
+                GrailsPlugin::getName,
+                GrailsPlugin::getLoadAfterNames,
+                GrailsPlugin::getLoadBeforeNames,
+                this::getGrailsPlugin
+        );
         initializePlugins();
         initialised = true;
-    }
-
-    protected List<GrailsPlugin> sortPlugins(List<GrailsPlugin> toSort) {
-        /* http://en.wikipedia.org/wiki/Topological_sorting
-         *
-        * L <- Empty list that will contain the sorted nodes
-         S <- Set of all nodes
-
-        function visit(node n)
-            if n has not been visited yet then
-                mark n as visited
-                for each node m with an edge from n to m do
-                    visit(m)
-                add n to L
-
-        for each node n in S do
-            visit(n)
-
-         */
-        List<GrailsPlugin> sortedPlugins = new ArrayList<>(toSort.size());
-        Set<GrailsPlugin> visitedPlugins = new HashSet<>();
-        Map<GrailsPlugin, List<GrailsPlugin>> loadOrderDependencies = resolveLoadDependencies(toSort);
-
-        for (GrailsPlugin plugin : toSort) {
-            visitTopologicalSort(plugin, sortedPlugins, visitedPlugins, loadOrderDependencies);
-        }
-
-        return sortedPlugins;
-    }
-
-    protected Map<GrailsPlugin, List<GrailsPlugin>> resolveLoadDependencies(List<GrailsPlugin> plugins) {
-        Map<GrailsPlugin, List<GrailsPlugin>> loadOrderDependencies = new HashMap<>();
-
-        for (GrailsPlugin plugin : plugins) {
-            if (plugin.getLoadAfterNames() != null) {
-                List<GrailsPlugin> loadDepsForPlugin = loadOrderDependencies.get(plugin);
-                if (loadDepsForPlugin == null) {
-                    loadDepsForPlugin = new ArrayList<>();
-                    loadOrderDependencies.put(plugin, loadDepsForPlugin);
-                }
-                for (String pluginName : plugin.getLoadAfterNames()) {
-                    GrailsPlugin loadAfterPlugin = getGrailsPlugin(pluginName);
-                    if (loadAfterPlugin != null) {
-                        loadDepsForPlugin.add(loadAfterPlugin);
-                    }
-                }
-            }
-            for (String loadBefore : plugin.getLoadBeforeNames()) {
-                GrailsPlugin loadBeforePlugin = getGrailsPlugin(loadBefore);
-                if (loadBeforePlugin != null) {
-                    List<GrailsPlugin> loadDepsForPlugin = loadOrderDependencies.get(loadBeforePlugin);
-                    if (loadDepsForPlugin == null) {
-                        loadDepsForPlugin = new ArrayList<>();
-                        loadOrderDependencies.put(loadBeforePlugin, loadDepsForPlugin);
-                    }
-                    loadDepsForPlugin.add(plugin);
-                }
-            }
-        }
-        return loadOrderDependencies;
-    }
-
-    private void visitTopologicalSort(GrailsPlugin plugin, List<GrailsPlugin> sortedPlugins, Set<GrailsPlugin> visitedPlugins, Map<GrailsPlugin, List<GrailsPlugin>> loadOrderDependencies) {
-        if (plugin != null && !visitedPlugins.contains(plugin)) {
-            visitedPlugins.add(plugin);
-            List<GrailsPlugin> loadDepsForPlugin = loadOrderDependencies.get(plugin);
-            if (loadDepsForPlugin != null) {
-                for (GrailsPlugin dependentPlugin : loadDepsForPlugin) {
-                    visitTopologicalSort(dependentPlugin, sortedPlugins, visitedPlugins, loadOrderDependencies);
-                }
-            }
-            sortedPlugins.add(plugin);
-        }
     }
 
     private void attemptLoadPlugins(ClassLoader gcl) {
@@ -360,7 +293,6 @@ public class DefaultGrailsPluginManager extends AbstractGrailsPluginManager {
 
     private List<GrailsPlugin> findCorePlugins() {
         CorePluginFinder finder = new CorePluginFinder(application);
-        finder.setParentApplicationContext(parentCtx);
 
         List<GrailsPlugin> grailsCorePlugins = new ArrayList<>();
 
@@ -486,7 +418,6 @@ public class DefaultGrailsPluginManager extends AbstractGrailsPluginManager {
 
             if (isGrailsPlugin(pluginClass)) {
                 GrailsPlugin plugin = createGrailsPlugin(pluginClass, r);
-                //attemptPluginLoad(plugin);
                 isCompatiblePlugin(plugin);
                 grailsUserPlugins.add(plugin);
             } else {
@@ -497,7 +428,6 @@ public class DefaultGrailsPluginManager extends AbstractGrailsPluginManager {
         for (Class<?> pluginClass : pluginClasses) {
             if (isGrailsPlugin(pluginClass)) {
                 GrailsPlugin plugin = createGrailsPlugin(pluginClass);
-                //attemptPluginLoad(plugin);
                 isCompatiblePlugin(plugin);
                 grailsUserPlugins.add(plugin);
             } else {
@@ -785,6 +715,7 @@ public class DefaultGrailsPluginManager extends AbstractGrailsPluginManager {
         return pluginFilter;
     }
 
+    @Override
     public void setPluginFilter(PluginFilter pluginFilter) {
         this.pluginFilter = pluginFilter;
     }
