@@ -52,7 +52,7 @@ import grails.core.support.proxy.DefaultProxyHandler
 import grails.plugins.GrailsPluginManager
 import grails.spring.BeanBuilder
 import grails.util.Holders
-import org.grails.plugins.IncludingPluginFilter
+import org.apache.grails.core.plugins.filters.IncludingPluginFilter
 import org.grails.spring.context.support.GrailsPlaceholderConfigurer
 import org.grails.spring.context.support.MapBasedSmartPropertyOverrideConfigurer
 import org.grails.transaction.TransactionManagerPostProcessor
@@ -242,6 +242,7 @@ class GrailsApplicationBuilder {
             this.includedPlugins = includedPlugins
         }
 
+        // TODO: Needs to inject earlier in the process
         @Override
         protected void customizePluginManager(GrailsPluginManager grailsApplication) {
             pluginManager.pluginFilter = new IncludingPluginFilter(includedPlugins)

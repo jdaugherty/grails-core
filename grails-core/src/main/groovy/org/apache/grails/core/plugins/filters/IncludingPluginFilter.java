@@ -16,24 +16,21 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.grails.plugins;
+package org.apache.grails.core.plugins.filters;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import grails.plugins.GrailsPlugin;
+import org.apache.grails.core.plugins.GrailsPluginLoadMetadata;
 
 /**
  * Implementation of <code>PluginFilter</code> which ensures that only the supplied
  * plugins (identified by name) as well as their dependencies are included in the filtered plugin list.
- *
- * @author Phil Zoio
  */
-@SuppressWarnings({ "unchecked", "rawtypes" })
 public class IncludingPluginFilter extends BasePluginFilter {
 
-    public IncludingPluginFilter(Set included) {
+    public IncludingPluginFilter(Set<String> included) {
         super(included);
     }
 
@@ -42,15 +39,13 @@ public class IncludingPluginFilter extends BasePluginFilter {
     }
 
     @Override
-    protected List getPluginList(List original, List pluginList) {
-        List newList = new ArrayList();
-        newList.addAll(pluginList);
-        return newList;
+    protected List<GrailsPluginLoadMetadata> getPluginList(List<GrailsPluginLoadMetadata> original, List<GrailsPluginLoadMetadata> pluginList) {
+        return new ArrayList<>(pluginList);
     }
 
     @Override
-    protected void addPluginDependencies(List additionalList, GrailsPlugin plugin) {
-        String[] dependencyNames = plugin.getDependencyNames();
+    protected void addPluginDependencies(List<GrailsPluginLoadMetadata> additionalList, GrailsPluginLoadMetadata plugin) {
+        String[] dependencyNames = plugin.dependsOnNames();
         for (String name : dependencyNames) {
             registerDependency(additionalList, getNamedPlugin(name));
         }

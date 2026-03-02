@@ -18,9 +18,11 @@
  */
 package org.grails.core.io
 
-import groovy.xml.XmlSlurper
+
 import grails.core.DefaultGrailsApplication
 import groovy.xml.XmlSlurper
+
+import org.apache.grails.core.plugins.GrailsPluginDescriptor
 import org.grails.plugins.*
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.ResourceLoader
@@ -73,7 +75,7 @@ class ResourceLocatorSpec extends Specification {
             def xml = new XmlSlurper().parseText(str)
 
             def resource = new MockBinaryPluginResource(str.bytes)
-            def descriptor = new BinaryGrailsPluginDescriptor(resource, ['org.grails.plugins.TestBinaryGrailsPlugin'])
+            def descriptor = new GrailsPluginDescriptor(resource, ['org.grails.plugins.TestBinaryGrailsPlugin'])
             resource.relativesResources['static/css/main.css'] = new ByteArrayResource(''.bytes)
             def binaryPlugin = new BinaryGrailsPlugin(TestBinaryGrailsPlugin, descriptor, new DefaultGrailsApplication())
     }

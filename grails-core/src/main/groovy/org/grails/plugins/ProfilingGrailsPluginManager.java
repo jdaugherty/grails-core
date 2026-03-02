@@ -30,6 +30,7 @@ import grails.plugins.GrailsPlugin;
 import grails.plugins.exceptions.PluginException;
 import org.grails.core.exceptions.GrailsConfigurationException;
 import org.grails.spring.RuntimeSpringConfiguration;
+import org.apache.grails.core.plugins.GrailsPluginDiscovery;
 
 /**
  * A GrailsPluginManager implementation that outputs profile data to a logger.
@@ -39,24 +40,8 @@ import org.grails.spring.RuntimeSpringConfiguration;
  */
 public class ProfilingGrailsPluginManager extends DefaultGrailsPluginManager {
 
-    public ProfilingGrailsPluginManager(GrailsApplication application) {
-        super(application);
-    }
-
-    public ProfilingGrailsPluginManager(Class<?>[] plugins, GrailsApplication application) {
-        super(plugins, application);
-    }
-
-    public ProfilingGrailsPluginManager(Resource[] pluginFiles, GrailsApplication application) {
-        super(pluginFiles, application);
-    }
-
-    public ProfilingGrailsPluginManager(String resourcePath, GrailsApplication application) {
-        super(resourcePath, application);
-    }
-
-    public ProfilingGrailsPluginManager(String[] pluginResources, GrailsApplication application) {
-        super(pluginResources, application);
+    public ProfilingGrailsPluginManager(GrailsApplication application, GrailsPluginDiscovery pluginDiscovery) {
+        super(application, pluginDiscovery);
     }
 
     @Override
@@ -77,7 +62,7 @@ public class ProfilingGrailsPluginManager extends DefaultGrailsPluginManager {
         for (Class<?> COMMON_CLASS : COMMON_CLASSES) {
             registry.removeMetaClass(COMMON_CLASS);
         }
-        for (GrailsPlugin plugin : pluginList) {
+        for (GrailsPlugin plugin : getAllPlugins()) {
             if (plugin.supportsCurrentScopeAndEnvironment()) {
                 try {
                     long pluginTime = System.currentTimeMillis();
@@ -101,7 +86,7 @@ public class ProfilingGrailsPluginManager extends DefaultGrailsPluginManager {
 
         System.out.println("doWithSpring started");
         checkInitialised();
-        for (GrailsPlugin plugin : pluginList) {
+        for (GrailsPlugin plugin : getAllPlugins()) {
             if (plugin.supportsCurrentScopeAndEnvironment()) {
                 long pluginTime = System.currentTimeMillis();
                 System.out.println("doWithSpring for plugin [" + plugin.getName() + "] started");
@@ -117,7 +102,7 @@ public class ProfilingGrailsPluginManager extends DefaultGrailsPluginManager {
         long time = System.currentTimeMillis();
         System.out.println("doWithApplicationContext started");
         checkInitialised();
-        for (GrailsPlugin plugin : pluginList) {
+        for (GrailsPlugin plugin : getAllPlugins()) {
             if (plugin.supportsCurrentScopeAndEnvironment()) {
                 long pluginTime = System.currentTimeMillis();
                 System.out.println("doWithApplicationContext for plugin [" + plugin.getName() + "] started");

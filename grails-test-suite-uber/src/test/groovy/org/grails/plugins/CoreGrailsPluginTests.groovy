@@ -22,9 +22,8 @@ package org.grails.plugins
 import grails.plugins.GrailsPlugin
 import grails.plugins.GrailsPluginManager
 import grails.web.servlet.plugins.GrailsWebPluginManager
+import org.apache.grails.core.plugins.GrailsPluginDiscovery
 import org.grails.config.PropertySourcesConfig
-import org.grails.plugins.DefaultGrailsPlugin
-import org.grails.plugins.MockGrailsPluginManager
 import org.grails.spring.aop.autoproxy.GroovyAwareAspectJAwareAdvisorAutoProxyCreator
 import org.grails.spring.aop.autoproxy.GroovyAwareInfrastructureAdvisorAutoProxyCreator
 import org.grails.web.servlet.context.support.WebRuntimeSpringConfiguration
@@ -38,7 +37,7 @@ class CoreGrailsPluginTests extends AbstractGrailsMockTests {
         def pluginClass = gcl.loadClass("org.grails.plugins.CoreGrailsPlugin")
 
         def plugin = new DefaultGrailsPlugin(pluginClass, ga)
-        def pluginManager = new MockGrailsPluginManager()
+        def pluginManager = new MockGrailsPluginManager(ga)
         ctx.registerMockBean(GrailsPluginManager.BEAN_NAME, pluginManager)
         ga.config.grails.spring.bean.packages = ['org.grails.plugins.test']
 
@@ -137,7 +136,8 @@ class CoreGrailsPluginTests extends AbstractGrailsMockTests {
         springConfig.servletContext = createMockServletContext()
 
         corePlugin.doWithRuntimeConfiguration(springConfig)
-        dataSourcePlugin.manager = new GrailsWebPluginManager([corePluginClass] as Class[], ga)
+        def discovery = new GrailsPluginDiscovery([corePluginClass] as Class[])
+        dataSourcePlugin.manager = new GrailsWebPluginManager(ga, discovery)
         dataSourcePlugin.doWithRuntimeConfiguration(springConfig)
 
         def pluginClass = gcl.loadClass("org.grails.plugins.services.ServicesGrailsPlugin")

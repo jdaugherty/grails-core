@@ -16,59 +16,73 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.grails.plugins;
+package org.apache.grails.core.plugins.filters;
 
+import grails.config.Settings;
 import grails.plugins.PluginFilter;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
+import org.springframework.mock.env.MockEnvironment;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SuppressWarnings("rawtypes")
 public class PluginFilterFactoryTests {
 
+    MockEnvironment createEnvironment(String includes, String excludes) {
+        MockEnvironment env = new MockEnvironment();
+        if(includes != null) {
+            env.setProperty(Settings.PLUGIN_INCLUDES, includes);
+        }
+        if(excludes != null) {
+            env.setProperty(Settings.PLUGIN_EXCLUDES, excludes);
+        }
+        return env;
+    }
+
     @Test
-    public void testIncludeFilterOne() throws Exception {
+    public void testIncludeFilterOne() {
         PluginFilterRetriever fb = new PluginFilterRetriever();
-        PluginFilter bean = fb.getPluginFilter("one", null);
-        assertTrue(bean instanceof IncludingPluginFilter);
+        PluginFilter bean = fb.getPluginFilter(createEnvironment("one", null));
+        assertInstanceOf(IncludingPluginFilter.class, bean);
 
         IncludingPluginFilter filter = (IncludingPluginFilter)bean;
-        Set suppliedNames = filter.getSuppliedNames();
+        Set<String> suppliedNames = filter.getSuppliedNames();
         assertEquals(1, suppliedNames.size());
         assertTrue(suppliedNames.contains("one"));
     }
 
     @Test
-    public void testIncludeFilter() throws Exception {
+    public void testIncludeFilter() {
         PluginFilterRetriever fb = new PluginFilterRetriever();
-        PluginFilter bean = fb.getPluginFilter("one, two", " three , four ");
-        assertTrue(bean instanceof IncludingPluginFilter);
+        PluginFilter bean = fb.getPluginFilter(createEnvironment("one, two", " three , four "));
+        assertInstanceOf(IncludingPluginFilter.class, bean);
 
         IncludingPluginFilter filter = (IncludingPluginFilter)bean;
-        Set suppliedNames = filter.getSuppliedNames();
+        Set<String> suppliedNames = filter.getSuppliedNames();
         assertEquals(2, suppliedNames.size());
         assertTrue(suppliedNames.contains("two"));
     }
 
     @Test
-    public void testExcludeFilter() throws Exception {
+    public void testExcludeFilter() {
         PluginFilterRetriever fb = new PluginFilterRetriever();
-        PluginFilter bean = fb.getPluginFilter(null, " three , four ");
-        assertTrue(bean instanceof ExcludingPluginFilter);
+        PluginFilter bean = fb.getPluginFilter(createEnvironment(null, " three , four "));
+        assertInstanceOf(ExcludingPluginFilter.class, bean);
 
         ExcludingPluginFilter filter = (ExcludingPluginFilter)bean;
-        Set suppliedNames = filter.getSuppliedNames();
+        Set<String> suppliedNames = filter.getSuppliedNames();
         assertEquals(2, suppliedNames.size());
         assertTrue(suppliedNames.contains("four"));
     }
 
     @Test
-    public void testDefaultFilter() throws Exception {
+    public void testDefaultFilter() {
         PluginFilterRetriever fb = new PluginFilterRetriever();
-        PluginFilter bean = fb.getPluginFilter(null, null);
-        assertTrue(bean instanceof IdentityPluginFilter);
+        PluginFilter bean = fb.getPluginFilter(createEnvironment(null, null));
+        assertInstanceOf(NoOpPluginFilter.class, bean);
     }
 }

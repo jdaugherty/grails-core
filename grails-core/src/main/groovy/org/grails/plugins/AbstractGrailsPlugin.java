@@ -34,11 +34,13 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.PropertySource;
 import org.springframework.util.Assert;
 
+import grails.boot.config.GrailsEnvironmentPostProcessor;
 import grails.config.Config;
 import grails.core.GrailsApplication;
 import grails.plugins.GrailsPlugin;
 import grails.plugins.GrailsPluginManager;
 import grails.util.GrailsNameUtils;
+import org.apache.grails.core.plugins.GrailsPluginUtils;
 import org.grails.core.AbstractGrailsClass;
 import org.grails.plugins.support.WatchPattern;
 
@@ -86,7 +88,7 @@ public abstract class AbstractGrailsPlugin extends GroovyObjectSupport implement
      *
      * <p>Plugin configuration files ({@code plugin.yml} or {@code plugin.groovy}) are loaded
      * early in the application lifecycle by
-     * {@link grails.boot.config.GrailsPluginEnvironmentPostProcessor} and registered as named
+     * {@link GrailsEnvironmentPostProcessor} and registered as named
      * property sources in the environment. This method looks up the property source by the
      * expected name ({@code "<pluginName>-plugin.yml"} or {@code "<pluginName>-plugin.groovy"}).</p>
      *
@@ -94,6 +96,7 @@ public abstract class AbstractGrailsPlugin extends GroovyObjectSupport implement
      *         or the application context is not yet available
      */
     @Override
+    @Deprecated(forRemoval = true)
     public PropertySource<?> getPropertySource() {
         ApplicationContext mainContext = grailsApplication != null ? grailsApplication.getMainContext() : null;
         if (mainContext == null) {
@@ -103,11 +106,11 @@ public abstract class AbstractGrailsPlugin extends GroovyObjectSupport implement
         if (environment instanceof ConfigurableEnvironment configurableEnv) {
             var propertySources = configurableEnv.getPropertySources();
             String pluginName = GrailsNameUtils.getLogicalPropertyName(pluginClass.getSimpleName(), "GrailsPlugin");
-            PropertySource<?> ps = propertySources.get(pluginName + "-" + GrailsPluginDiscovery.PLUGIN_YML);
+            PropertySource<?> ps = propertySources.get(pluginName + "-" + GrailsPluginUtils.PLUGIN_YML_CONFIG);
             if (ps != null) {
                 return ps;
             }
-            return propertySources.get(pluginName + "-" + GrailsPluginDiscovery.PLUGIN_GROOVY);
+            return propertySources.get(pluginName + "-" + GrailsPluginUtils.PLUGIN_GROOVY_CONFIG);
         }
         return null;
     }

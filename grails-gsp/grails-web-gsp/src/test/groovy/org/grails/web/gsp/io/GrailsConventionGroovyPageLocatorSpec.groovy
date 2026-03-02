@@ -29,7 +29,7 @@ import org.grails.gsp.compiler.GroovyPageParser
 import org.grails.gsp.io.GroovyPageCompiledScriptSource
 import org.grails.gsp.io.GroovyPageResourceScriptSource
 import org.grails.plugins.BinaryGrailsPlugin
-import org.grails.plugins.BinaryGrailsPluginDescriptor
+import org.apache.grails.core.plugins.GrailsPluginDescriptor
 import org.grails.plugins.CoreGrailsPlugin
 import org.grails.web.util.GrailsApplicationAttributes
 import org.springframework.core.io.ByteArrayResource
@@ -232,7 +232,7 @@ class GrailsConventionGroovyPageLocatorSpec extends Specification {
         def xml = new XmlSlurper().parseText(str)
 
         def resource = new MockBinaryPluginResource(str.bytes)
-        def descriptor = new BinaryGrailsPluginDescriptor(resource, ['org.grails.web.gsp.io.TestBinaryResource'])
+        def descriptor = new GrailsPluginDescriptor(resource, ['org.grails.web.gsp.io.TestBinaryResource'])
         resource.relativesResources['static/css/main.css'] = new ByteArrayResource(''.bytes)
         def binaryPlugin = new BinaryGrailsPlugin(TestBinaryGrailsPlugin, descriptor, new DefaultGrailsApplication())
         GroovyPageParser gpp = new GroovyPageParser("binaryView","/test/binaryView.gsp","/test/binaryView.gsp",new ByteArrayInputStream("hello world".bytes), "UTF-8", "HTML", null)

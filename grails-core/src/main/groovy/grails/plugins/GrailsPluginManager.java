@@ -225,12 +225,6 @@ public interface GrailsPluginManager extends ApplicationContextAware {
     void shutdown();
 
     /**
-     * Set whether the core plugins should be loaded
-     * @param shouldLoadCorePlugins True if they should
-     */
-    void setLoadCorePlugins(boolean shouldLoadCorePlugins);
-
-    /**
      * Method for handling changes to a class and triggering on change events etc.
      * @param aClass The class
      */
@@ -326,11 +320,4 @@ public interface GrailsPluginManager extends ApplicationContextAware {
      * @return True if it was shutdown
      */
     boolean isShutdown();
-
-    /**
-     * Sets the filter to use to filter for plugins
-     *
-     * @param pluginFilter The plugin filter
-     */
-    public void setPluginFilter(PluginFilter pluginFilter);
 }

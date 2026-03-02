@@ -33,7 +33,7 @@ import java.util.function.Function;
  * <p>This class provides the single shared implementation of plugin ordering that
  * is used by both {@link DefaultGrailsPluginManager} (at runtime, operating on
  * {@link GrailsPlugin} instances) and
- * {@link grails.boot.config.GrailsPluginEnvironmentPostProcessor} (early in the
+ * {@link GrailsEnvironmentPostProcessor} (early in the
  * lifecycle, operating on lightweight {@code PluginInfo} records before the
  * ApplicationContext is available).</p>
  *

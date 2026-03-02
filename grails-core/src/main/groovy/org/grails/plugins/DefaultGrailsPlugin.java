@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import groovy.lang.Binding;
 import groovy.lang.Closure;
@@ -84,15 +85,17 @@ import org.grails.spring.RuntimeSpringConfiguration;
 @SuppressWarnings("rawtypes")
 public class DefaultGrailsPlugin extends AbstractGrailsPlugin implements ParentApplicationContextAware {
 
+    public static final String INCLUDES = "includes";
+    public static final String EXCLUDES = "excludes";
+
+    protected static final Log LOG = LogFactory.getLog(DefaultGrailsPlugin.class);
+
     private static final String PLUGIN_CHANGE_EVENT_CTX = "ctx";
     private static final String PLUGIN_CHANGE_EVENT_APPLICATION = "application";
     private static final String PLUGIN_CHANGE_EVENT_PLUGIN = "plugin";
     private static final String PLUGIN_CHANGE_EVENT_SOURCE = "source";
     private static final String PLUGIN_CHANGE_EVENT_MANAGER = "manager";
 
-    protected static final Log LOG = LogFactory.getLog(DefaultGrailsPlugin.class);
-    private static final String INCLUDES = "includes";
-    private static final String EXCLUDES = "excludes";
     private GrailsPluginClass pluginGrailsClass;
 
     private GroovyObject plugin;
@@ -223,7 +226,6 @@ public class DefaultGrailsPlugin extends AbstractGrailsPlugin implements ParentA
     }
 
     private void evaluatePluginScopes() {
-        // Damn I wish Java had closures
         pluginEnvs = evaluateIncludeExcludeProperty(ENVIRONMENTS, new Closure(this) {
             private static final long serialVersionUID = 1;
             @Override
@@ -707,7 +709,7 @@ public class DefaultGrailsPlugin extends AbstractGrailsPlugin implements ParentA
 
     public boolean isEnabled() {
         if (plugin instanceof Plugin) {
-            return ((Plugin) plugin).isEnabled();
+            return ((Plugin) plugin).enabled;
         }
         else {
             return STATUS_ENABLED.equals(status);

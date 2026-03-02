@@ -59,6 +59,7 @@ import org.grails.core.lifecycle.ShutdownOperations
 import org.grails.datastore.mapping.model.MappingContext
 import org.grails.spring.DefaultRuntimeSpringConfiguration
 import org.grails.spring.RuntimeSpringConfigUtilities
+import org.apache.grails.core.plugins.GrailsPluginDiscovery
 
 /**
  * A {@link BeanDefinitionRegistryPostProcessor} that enhances any ApplicationContext with plugin manager capabilities
@@ -81,7 +82,7 @@ class GrailsApplicationPostProcessor implements BeanDefinitionRegistryPostProces
     boolean loadExternalBeans = true
     boolean reloadingEnabled = RELOADING_ENABLED
 
-    GrailsApplicationPostProcessor(GrailsApplicationLifeCycle lifeCycle, ApplicationContext applicationContext, Class...classes) {
+    GrailsApplicationPostProcessor(GrailsApplicationLifeCycle lifeCycle, ApplicationContext applicationContext, GrailsPluginDiscovery pluginDiscovery, Class...classes) {
         this.lifeCycle = lifeCycle
         if (lifeCycle instanceof GrailsApplicationClass) {
             this.applicationClass = (GrailsApplicationClass) lifeCycle
@@ -91,7 +92,7 @@ class GrailsApplicationPostProcessor implements BeanDefinitionRegistryPostProces
         }
         this.classes = classes != null ? classes : [] as Class[]
         grailsApplication = applicationClass != null ? new DefaultGrailsApplication(applicationClass) : new DefaultGrailsApplication()
-        pluginManager = applicationContext?.getBeanNamesForType(GrailsPluginManager) ? applicationContext.getBean(GrailsPluginManager) : new DefaultGrailsPluginManager(grailsApplication)
+        pluginManager = applicationContext?.getBeanNamesForType(GrailsPluginManager) ? applicationContext.getBean(GrailsPluginManager) : new DefaultGrailsPluginManager(grailsApplication, pluginDiscovery)
         if (applicationContext != null) {
             setApplicationContext(applicationContext)
         }
@@ -104,16 +105,11 @@ class GrailsApplicationPostProcessor implements BeanDefinitionRegistryPostProces
         Environment.setInitializing(true)
         grailsApplication.applicationContext = applicationContext
         grailsApplication.mainContext = applicationContext
-        customizePluginManager(pluginManager)
         pluginManager.loadPlugins()
         pluginManager.applicationContext = applicationContext
         loadApplicationConfig()
         customizeGrailsApplication(grailsApplication)
         performGrailsInitializationSequence()
-    }
-
-    protected void customizePluginManager(GrailsPluginManager grailsApplication) {
-
     }
 
     protected void customizeGrailsApplication(GrailsApplication grailsApplication) {
@@ -136,7 +132,7 @@ class GrailsApplicationPostProcessor implements BeanDefinitionRegistryPostProces
      * that backs {@code grailsApplication.config}.
      *
      * <p>Plugin configurations are loaded early by
-     * {@link GrailsPluginEnvironmentPostProcessor} and are already
+     * {@link GrailsEnvironmentPostProcessor} and are already
      * present in the environment's property sources by the time this method runs.
      * This method simply creates the {@link PropertySourcesConfig} from whatever
      * property sources exist in the environment.</p>

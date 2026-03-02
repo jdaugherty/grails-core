@@ -16,24 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package grails.plugins;
+package org.apache.grails.core.plugins;
 
 import java.util.List;
 
-import org.apache.grails.core.plugins.GrailsPluginLoadMetadata;
+import org.springframework.core.io.Resource;
 
 /**
- * Defines interface for obtaining a sublist of <code>GrailsPlugin</code> instances
- * based on an original supplied list of <code>GrailsPlugin</code> instances.
- *
- * @author Phil Zoio
+ * Holds a reference to the parsed grails-plugin.xml descriptor or the resource file that represents the plugin for the
+ * given plugin classes
  */
-public interface PluginFilter {
+public record GrailsPluginDescriptor(Resource resource, List<String> providedPlugins, List<String> providedClasses) {
 
-    /**
-     * Returns a filtered list of plugins.
-     * @param original the original supplied set of <code>GrailsPlugin</code> instances
-     * @return a sublist of these items
-     */
-    List<GrailsPluginLoadMetadata> filterPluginList(List<GrailsPluginLoadMetadata> original);
 }

@@ -75,7 +75,7 @@ abstract class Plugin implements GrailsApplicationLifeCycle, GrailsApplicationAw
     /**
      * Whether the plugin is enabled
      */
-    boolean enabled = true
+    public boolean enabled = true
 
     /**
      * List of {@link ArtefactHandler} instances provided by this plugin

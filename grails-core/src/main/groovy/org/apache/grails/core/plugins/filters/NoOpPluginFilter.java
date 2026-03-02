@@ -16,24 +16,22 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.grails.plugins;
+package org.apache.grails.core.plugins.filters;
 
 import java.util.List;
 
 import grails.plugins.PluginFilter;
+import org.apache.grails.core.plugins.GrailsPluginLoadMetadata;
 
 /**
  * No-op implementation of <code>PluginFilter</code>.
- *
- * @author Phil Zoio
  */
-public class IdentityPluginFilter implements PluginFilter {
+public class NoOpPluginFilter implements PluginFilter {
 
     /**
      * Simply returns original list reference.
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public List filterPluginList(List original) {
+    public List<GrailsPluginLoadMetadata> filterPluginList(List<GrailsPluginLoadMetadata> original) {
         return original;
     }
 }

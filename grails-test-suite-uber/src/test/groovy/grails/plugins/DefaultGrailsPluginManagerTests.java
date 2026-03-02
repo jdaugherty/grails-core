@@ -21,11 +21,13 @@ package grails.plugins;
 import grails.core.DefaultGrailsApplication;
 import grails.core.GrailsApplication;
 import groovy.lang.GroovyClassLoader;
-import org.grails.plugins.IncludingPluginFilter;
+import org.apache.grails.core.plugins.filters.IncludingPluginFilter;
+import org.apache.grails.core.plugins.GrailsPluginDiscovery;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.GenericApplicationContext;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -65,13 +67,16 @@ public class DefaultGrailsPluginManagerTests {
         GenericApplicationContext parent = new GenericApplicationContext();
         parent.getDefaultListableBeanFactory().registerSingleton(GrailsApplication.APPLICATION_ID, app);
 
-        DefaultGrailsPluginManager manager = new DefaultGrailsPluginManager(new Class[]{first, second, third, fourth}, app);
+        GrailsPluginDiscovery discovery = new GrailsPluginDiscovery();
+        discovery.setPluginFilter(new IncludingPluginFilter("dataSource", "first", "third"));
+        parent.getDefaultListableBeanFactory().registerSingleton(GrailsPluginDiscovery.BEAN_NAME, discovery);
+        DefaultGrailsPluginManager manager = new DefaultGrailsPluginManager(app, discovery);
         manager.setParentApplicationContext(parent);
-        manager.setPluginFilter(new IncludingPluginFilter("dataSource", "first", "third"));
 
         manager.loadPlugins();
 
-        List pluginList = manager.getPluginList();
+        GrailsPlugin[] plugins = manager.getAllPlugins();
+        List<GrailsPlugin> pluginList = Arrays.asList(plugins);
 
         assertNotNull(manager.getGrailsPlugin("dataSource"));
         assertNotNull(manager.getGrailsPlugin("first"));
@@ -117,13 +122,17 @@ public class DefaultGrailsPluginManagerTests {
         GenericApplicationContext parent = new GenericApplicationContext();
         parent.getDefaultListableBeanFactory().registerSingleton(GrailsApplication.APPLICATION_ID, app);
 
-        DefaultGrailsPluginManager manager = new DefaultGrailsPluginManager(new Class[]{first, second, third}, app);
+        // Set plugin filter on discovery before loading plugins
+        GrailsPluginDiscovery discovery = new GrailsPluginDiscovery();
+        discovery.setPluginFilter(new IncludingPluginFilter("dataSource", "first", "second", "third"));
+        parent.getDefaultListableBeanFactory().registerSingleton(GrailsPluginDiscovery.BEAN_NAME, discovery);
+        DefaultGrailsPluginManager manager = new DefaultGrailsPluginManager(app, discovery);
         manager.setParentApplicationContext(parent);
-        manager.setPluginFilter(new IncludingPluginFilter("dataSource", "first", "second", "third"));
 
         manager.loadPlugins();
 
-        List pluginList = manager.getPluginList();
+        GrailsPlugin[] plugins = manager.getAllPlugins();
+        List<GrailsPlugin> pluginList = Arrays.asList(plugins);
 
         assertNotNull(manager.getGrailsPlugin("first"));
         assertNotNull(manager.getGrailsPlugin("second"));
@@ -150,7 +159,8 @@ public class DefaultGrailsPluginManagerTests {
                                 "def loadBefore = ['first', 'second']\n" +
                                 "}");
 
-        List<GrailsPlugin> pluginList = manager.getPluginList();
+        GrailsPlugin[] plugins = manager.getAllPlugins();
+        List<GrailsPlugin> pluginList = Arrays.asList(plugins);
 
         assertNotNull(manager.getGrailsPlugin("first"));
         assertNotNull(manager.getGrailsPlugin("second"));
@@ -180,9 +190,11 @@ public class DefaultGrailsPluginManagerTests {
         GenericApplicationContext parent = new GenericApplicationContext();
         parent.getDefaultListableBeanFactory().registerSingleton(GrailsApplication.APPLICATION_ID, app);
 
-        DefaultGrailsPluginManager manager = new DefaultGrailsPluginManager(new Class[]{first, second, third, fourth}, app);
+        // Set plugin filter on discovery before loading plugins
+        GrailsPluginDiscovery discovery = new GrailsPluginDiscovery(new Class[]{first, second, third, fourth});
+        discovery.setPluginFilter(new IncludingPluginFilter("first", "second", "third", "fourth"));
+        DefaultGrailsPluginManager manager = new DefaultGrailsPluginManager(app, discovery);
         manager.setParentApplicationContext(parent);
-        manager.setPluginFilter(new IncludingPluginFilter("first", "second", "third", "fourth"));
 
         manager.loadPlugins();
         return manager;
@@ -204,7 +216,8 @@ public class DefaultGrailsPluginManagerTests {
                                 "def loadBefore = ['first', 'second']\n" +
                                 "}");
 
-        List<GrailsPlugin> pluginList = manager.getPluginList();
+        GrailsPlugin[] plugins = manager.getAllPlugins();
+        List<GrailsPlugin> pluginList = Arrays.asList(plugins);
 
         List<GrailsPlugin> expectedOrder = new ArrayList<GrailsPlugin>();
         expectedOrder.add(manager.getGrailsPlugin("third"));

@@ -25,6 +25,7 @@ import org.springframework.context.ConfigurableApplicationContext
 
 import grails.boot.config.GrailsApplicationPostProcessor
 import grails.core.GrailsApplicationLifeCycle
+import org.apache.grails.core.plugins.GrailsPluginDiscovery
 
 /**
  * Profiles bean creation outputting data to the console
@@ -36,8 +37,8 @@ class ProfilingGrailsApplicationPostProcessor extends GrailsApplicationPostProce
 
     long startTime
 
-    ProfilingGrailsApplicationPostProcessor(GrailsApplicationLifeCycle lifeCycle, ApplicationContext applicationContext, Class... classes) {
-        super(lifeCycle, applicationContext, classes)
+    ProfilingGrailsApplicationPostProcessor(GrailsApplicationLifeCycle lifeCycle, ApplicationContext applicationContext, GrailsPluginDiscovery pluginDiscovery, Class ... classes) {
+        super(lifeCycle, applicationContext, pluginDiscovery, classes)
         ((ConfigurableApplicationContext) applicationContext).beanFactory.addBeanPostProcessor(this)
     }
 
