@@ -37,7 +37,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.io.Resource;
-import org.springframework.util.Assert;
 
 import grails.core.GrailsApplication;
 import grails.core.support.ParentApplicationContextAware;
@@ -198,15 +197,6 @@ public class DefaultGrailsPluginManager extends AbstractGrailsPluginManager {
 
         plugin.doWithApplicationContext(applicationContext);
         plugin.doWithDynamicMethods(applicationContext);
-    }
-
-    @Override
-    public void setApplication(GrailsApplication application) {
-        Assert.notNull(application, "Argument [application] cannot be null");
-        this.application = application;
-        for (GrailsPlugin plugin : getOrderedPlugins()) {
-            plugin.setApplication(application);
-        }
     }
 
     @Override
