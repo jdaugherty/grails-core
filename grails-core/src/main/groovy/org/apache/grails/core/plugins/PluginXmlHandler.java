@@ -54,11 +54,11 @@ class PluginXmlHandler extends DefaultHandler {
         state = ParseState.IDLE;
     }
 
-    public List<String> getPluginTypes() {
+    public List<String> getPluginClassNames() {
         return pluginTypes;
     }
 
-    public List<String> getPluginClasses() {
+    public List<String> getProvidedClasses() {
         return pluginClasses;
     }
 }

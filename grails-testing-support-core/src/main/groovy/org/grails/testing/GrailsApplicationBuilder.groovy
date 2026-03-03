@@ -53,6 +53,7 @@ import grails.plugins.GrailsPluginManager
 import grails.spring.BeanBuilder
 import grails.util.Holders
 import org.apache.grails.core.plugins.filters.IncludingPluginFilter
+import org.apache.grails.core.plugins.GrailsPluginDiscovery
 import org.grails.spring.context.support.GrailsPlaceholderConfigurer
 import org.grails.spring.context.support.MapBasedSmartPropertyOverrideConfigurer
 import org.grails.transaction.TransactionManagerPostProcessor
@@ -151,9 +152,18 @@ class GrailsApplicationBuilder {
     }
 
     protected void prepareContext(ConfigurableApplicationContext applicationContext, ConfigurableBeanFactory beanFactory) {
-        registerGrailsAppPostProcessorBean(beanFactory)
+        def discovery = registerPluginDiscoveryBean(beanFactory)
+        registerGrailsAppPostProcessorBean(beanFactory, discovery)
         AnnotationConfigUtils.registerAnnotationConfigProcessors((BeanDefinitionRegistry) beanFactory)
         new ConfigDataApplicationContextInitializer().initialize(applicationContext)
+    }
+
+    protected GrailsPluginDiscovery registerPluginDiscoveryBean(ConfigurableBeanFactory beanFactory) {
+        GrailsPluginDiscovery discovery = new GrailsPluginDiscovery()
+        discovery.setLoadClasspathPlugins(false) // performance optimization, since we'll only want to load the specified included plugins
+        discovery.setPluginFilter(new IncludingPluginFilter(includePlugins))
+        (beanFactory as DefaultListableBeanFactory).registerSingleton(GrailsPluginDiscovery.BEAN_NAME, discovery)
+        discovery
     }
 
     void executeDoWithSpringCallback(GrailsApplication grailsApplication) {
@@ -196,7 +206,7 @@ class GrailsApplicationBuilder {
         }
     }
 
-    protected void registerGrailsAppPostProcessorBean(ConfigurableBeanFactory beanFactory) {
+    protected void registerGrailsAppPostProcessorBean(ConfigurableBeanFactory beanFactory, GrailsPluginDiscovery pluginDiscovery) {
 
         GrailsApplication grailsApp
 
@@ -218,6 +228,7 @@ class GrailsApplicationBuilder {
         def constructorArgumentValues = new ConstructorArgumentValues()
         constructorArgumentValues.addIndexedArgumentValue(0, doWithSpringClosure)
         constructorArgumentValues.addIndexedArgumentValue(1, includePlugins ?: DEFAULT_INCLUDED_PLUGINS)
+        constructorArgumentValues.addIndexedArgumentValue(2, pluginDiscovery)
 
         def values = new MutablePropertyValues()
         values.add('localOverride', localOverride)
@@ -235,17 +246,11 @@ class GrailsApplicationBuilder {
         Set includedPlugins
         boolean localOverride = false
 
-        TestRuntimeGrailsApplicationPostProcessor(Closure doWithSpringClosure, Set includedPlugins) {
-            super([doWithSpring: { -> doWithSpringClosure }] as GrailsApplicationLifeCycle, null, null)
+        TestRuntimeGrailsApplicationPostProcessor(Closure doWithSpringClosure, Set includedPlugins, GrailsPluginDiscovery pluginDiscovery) {
+            super([doWithSpring: { -> doWithSpringClosure }] as GrailsApplicationLifeCycle, null, pluginDiscovery)
             loadExternalBeans = false
             reloadingEnabled = false
             this.includedPlugins = includedPlugins
-        }
-
-        // TODO: Needs to inject earlier in the process
-        @Override
-        protected void customizePluginManager(GrailsPluginManager grailsApplication) {
-            pluginManager.pluginFilter = new IncludingPluginFilter(includedPlugins)
         }
 
         @Override

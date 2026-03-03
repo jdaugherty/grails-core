@@ -21,7 +21,9 @@ package org.grails.plugins
 import grails.core.DefaultGrailsApplication
 import grails.plugins.DefaultGrailsPluginManager
 import grails.util.Environment
+import org.apache.grails.core.plugins.GrailsPluginDiscovery
 import org.junit.jupiter.api.Test
+import org.springframework.context.support.GenericApplicationContext
 
 import static org.junit.jupiter.api.Assertions.*
 
@@ -162,16 +164,33 @@ class TestGrailsPlugin {
 ''')
 
         DefaultGrailsApplication application = new DefaultGrailsApplication()
-        def pluginManager = new DefaultGrailsPluginManager([test1] as Class[], application)
-
-pluginManager.loadPlugins()
+        
+        // Create and set up application context
+        def appCtx = new GenericApplicationContext()
+        application.setMainContext(appCtx)
+        
+        // Create discovery bean configured for unit tests
+        GrailsPluginDiscovery discovery = new GrailsPluginDiscovery(new Class<?>[]{test1})
+        discovery.setLoadClasspathPlugins(false)
+        
+        def pluginManager = new DefaultGrailsPluginManager(application, discovery)
+        pluginManager.loadPlugins()
         assertNotNull pluginManager.getGrailsPlugin("test")
 
         String originalEnv = System.getProperty(Environment.KEY)
         try {
             System.setProperty(Environment.KEY, Environment.PRODUCTION.getName())
 
-            pluginManager = new DefaultGrailsPluginManager([test1] as Class[], application)
+            // Create new application and context for production environment test
+            application = new DefaultGrailsApplication()
+            appCtx = new GenericApplicationContext()
+            application.setMainContext(appCtx)
+            
+            // Create new discovery bean for production environment test
+            discovery = new GrailsPluginDiscovery(new Class<?>[]{test1})
+            discovery.setLoadClasspathPlugins(false)
+            
+            pluginManager = new DefaultGrailsPluginManager(application, discovery)
             pluginManager.loadPlugins()
             assertNull pluginManager.getGrailsPlugin("test")
         } finally {

@@ -20,6 +20,8 @@ package org.grails.core.io
 
 
 import grails.core.DefaultGrailsApplication
+import grails.plugins.GrailsPlugin
+import grails.plugins.GrailsPluginManager
 import groovy.xml.XmlSlurper
 
 import org.apache.grails.core.plugins.GrailsPluginDescriptor
@@ -54,8 +56,11 @@ class ResourceLocatorSpec extends Specification {
         given: "Resource locator with mock resource loader and a plugin manager"
              def loader = new MockStringResourceLoader()
              def resourceLocator = new MockResourceLocator(defaultResourceLoader: loader)
-             def manager = new MockGrailsPluginManager()
-             manager.registerMockPlugin(getBinaryPlugin())
+             def binaryPlugin = getBinaryPlugin()
+             
+             // Create a mock plugin manager that returns our registered binary plugin
+             def manager = Mock(GrailsPluginManager)
+             manager.getAllPlugins() >> ([binaryPlugin] as GrailsPlugin[])
              resourceLocator.pluginManager = manager
 
         when: "A binary plugin resource is queried"
@@ -75,9 +80,15 @@ class ResourceLocatorSpec extends Specification {
             def xml = new XmlSlurper().parseText(str)
 
             def resource = new MockBinaryPluginResource(str.bytes)
-            def descriptor = new GrailsPluginDescriptor(resource, ['org.grails.plugins.TestBinaryGrailsPlugin'])
+            def descriptor = new GrailsPluginDescriptor(resource, ['org.grails.plugins.TestBinaryGrailsPlugin'], [])
             resource.relativesResources['static/css/main.css'] = new ByteArrayResource(''.bytes)
-            def binaryPlugin = new BinaryGrailsPlugin(TestBinaryGrailsPlugin, descriptor, new DefaultGrailsApplication())
+            
+            def grailsApp = new DefaultGrailsApplication()
+            def appCtx = new org.springframework.context.support.GenericApplicationContext()
+            grailsApp.setMainContext(appCtx)
+            
+            def binaryPlugin = new BinaryGrailsPlugin(TestBinaryGrailsPlugin, descriptor, grailsApp)
+            return binaryPlugin
     }
 }
 

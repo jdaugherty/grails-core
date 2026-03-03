@@ -21,6 +21,7 @@ package org.grails.plugins
 import grails.core.DefaultGrailsApplication
 import grails.plugins.DefaultGrailsPluginManager
 import org.junit.jupiter.api.Test
+import org.apache.grails.core.plugins.GrailsPluginDiscovery
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 
@@ -62,10 +63,12 @@ class ThreeGrailsPlugin {
         def three = gcl.loadClass("ThreeGrailsPlugin")
         def four = gcl.loadClass("FourGrailsPlugin")
         def five = gcl.loadClass("FiveGrailsPlugin")
-        def pluginManager = new DefaultGrailsPluginManager([one,two,three, four,five] as Class[],
-            new DefaultGrailsApplication())
-
-        pluginManager.loadCorePlugins = false
+        GrailsPluginDiscovery pluginDiscovery = new GrailsPluginDiscovery([one, two, three, four, five] as Class[],)
+        pluginDiscovery.loadClasspathPlugins = false
+        def pluginManager = new DefaultGrailsPluginManager(
+                new DefaultGrailsApplication(),
+                pluginDiscovery
+        )
         pluginManager.loadPlugins()
 
         assertEquals "one", pluginManager.pluginList[0].name

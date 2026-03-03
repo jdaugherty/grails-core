@@ -28,6 +28,7 @@ import grails.core.DefaultGrailsApplication;
 import grails.core.GrailsApplication;
 import grails.plugins.GrailsPlugin;
 import grails.plugins.exceptions.PluginException;
+import org.apache.grails.core.plugins.GrailsPluginDiscovery;
 
 /**
  * @author Graeme Rocher
@@ -35,7 +36,12 @@ import grails.plugins.exceptions.PluginException;
  */
 public class MockGrailsPluginManager extends AbstractGrailsPluginManager {
     public MockGrailsPluginManager(GrailsApplication application) {
-        super(application);
+        super(application, new MockGrailsPluginDiscovery());
+        loadPlugins();
+    }
+
+    public MockGrailsPluginManager(GrailsApplication application, GrailsPluginDiscovery pluginDiscovery) {
+        super(application, pluginDiscovery);
         loadPlugins();
     }
 
@@ -59,7 +65,7 @@ public class MockGrailsPluginManager extends AbstractGrailsPluginManager {
 
     public void registerMockPlugin(GrailsPlugin plugin) {
         plugins.put(plugin.getName(), plugin);
-        pluginList.add(plugin);
+        ((MockGrailsPluginDiscovery) pluginDiscovery).registerMockPlugin(plugin);
     }
 
     public GrailsPlugin[] getUserPlugins() {
@@ -67,6 +73,24 @@ public class MockGrailsPluginManager extends AbstractGrailsPluginManager {
     }
 
     public void loadPlugins() throws PluginException {
+        if (initialised) {
+            return;
+        }
+
+        // Note: the environment is null here since the plugins should have always been populated in the bootstrap phase
+        pluginDiscovery.getPlugins(null).forEach(pluginInfo -> {
+            GrailsPlugin plugin;
+            if (pluginInfo.isDynamic()) {
+                plugin = new DefaultGrailsPlugin(pluginInfo.pluginClass(), application);
+            } else {
+                plugin = new BinaryGrailsPlugin(pluginInfo.pluginClass(), pluginInfo.pluginDescriptor(), application);
+            }
+
+            plugin.setApplicationContext(applicationContext);
+            plugin.setManager(this);
+            plugins.put(plugin.getName(), plugin);
+        });
+
         initialised = true;
     }
 

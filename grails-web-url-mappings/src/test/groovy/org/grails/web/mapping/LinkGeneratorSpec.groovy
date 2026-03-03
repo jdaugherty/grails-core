@@ -25,7 +25,7 @@ import grails.util.GrailsWebMockUtil
 import grails.web.CamelCaseUrlConverter
 import grails.web.mapping.UrlCreator
 import grails.web.mapping.UrlMappingsHolder
-
+import org.apache.grails.core.plugins.GrailsPluginDiscovery
 import org.grails.plugins.CoreGrailsPlugin
 import org.grails.web.util.WebUtils
 import org.springframework.mock.web.MockHttpServletRequest
@@ -419,7 +419,8 @@ class LinkGeneratorSpec extends Specification {
     }
 
     protected setPlugins(List<Class> pluginClasses) {
-        pluginManager = new DefaultGrailsPluginManager(pluginClasses as Class[], new DefaultGrailsApplication())
+        def app = new DefaultGrailsApplication()
+        pluginManager = new DefaultGrailsPluginManager(app, new GrailsPluginDiscovery(pluginClasses as Class[]))
         pluginManager.loadPlugins()
     }
 }
