@@ -24,6 +24,7 @@ import grails.util.Environment
 import org.apache.grails.core.plugins.GrailsPluginDiscovery
 import org.junit.jupiter.api.Test
 import org.springframework.context.support.GenericApplicationContext
+import org.springframework.core.env.StandardEnvironment
 
 import static org.junit.jupiter.api.Assertions.*
 
@@ -171,7 +172,9 @@ class TestGrailsPlugin {
         
         // Create discovery bean configured for unit tests
         GrailsPluginDiscovery discovery = new GrailsPluginDiscovery(new Class<?>[]{test1})
-        discovery.setLoadClasspathPlugins(false)
+
+        // simulate the call in GrailsEnvironmentPostProcessor to get the metadata
+        discovery.getPlugins(new StandardEnvironment())
         
         def pluginManager = new DefaultGrailsPluginManager(application, discovery)
         pluginManager.loadPlugins()
@@ -189,6 +192,7 @@ class TestGrailsPlugin {
             // Create new discovery bean for production environment test
             discovery = new GrailsPluginDiscovery(new Class<?>[]{test1})
             discovery.setLoadClasspathPlugins(false)
+            discovery.getPlugins(new StandardEnvironment())
             
             pluginManager = new DefaultGrailsPluginManager(application, discovery)
             pluginManager.loadPlugins()
