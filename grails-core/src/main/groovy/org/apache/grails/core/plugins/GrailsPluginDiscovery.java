@@ -397,8 +397,7 @@ public class GrailsPluginDiscovery {
         }
         return false;
     }
-
-
+    
     private void attemptRegisterPlugins(List<GrailsPluginInfo> filteredPlugins) {
         for (GrailsPluginInfo eligiblePlugin : filteredPlugins) {
             if (areDependenciesResolved(eligiblePlugin) && areNoneToLoadBefore(eligiblePlugin)) {

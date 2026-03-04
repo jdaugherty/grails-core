@@ -59,8 +59,8 @@ import grails.plugins.exceptions.PluginException;
 import grails.util.Environment;
 import grails.util.GrailsNameUtils;
 import org.apache.grails.core.plugins.GrailsPluginDiscovery;
-import org.apache.grails.core.plugins.GrailsPluginUtils;
 import org.apache.grails.core.plugins.GrailsPluginInfo;
+import org.apache.grails.core.plugins.GrailsPluginUtils;
 import org.grails.config.NavigableMap;
 import org.grails.io.support.GrailsResourceUtils;
 import org.grails.plugins.support.WatchPattern;
@@ -94,7 +94,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
         this.application = application;
         this.pluginDiscovery = pluginDiscovery;
     }
-    
+
     protected org.springframework.core.env.Environment lookupSpringEnvironment() {
         // the application context should realistically be set since the GrailsPluginManager is ApplicationContextAware
         // so it will always be set after the constructor, however, there is a long history of tests not setting it
@@ -163,8 +163,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
                 GenericConversionService conversionService = new GenericConversionService();
                 converterRegistry = conversionService;
                 beanFactory.setConversionService(conversionService);
-            }
-            else {
+            } else {
                 converterRegistry = (ConverterRegistry) existingConversionService;
             }
 
@@ -246,7 +245,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
 
     public GrailsPlugin getGrailsPlugin(String name) {
         GrailsPluginInfo metadata = pluginDiscovery.getPlugin(name, lookupSpringEnvironment());
-        if(metadata == null) {
+        if (metadata == null) {
             return null;
         }
 
@@ -259,7 +258,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
 
     public GrailsPlugin getGrailsPlugin(String name, Object version) {
         GrailsPluginInfo metadata = pluginDiscovery.getPlugin(name, version, lookupSpringEnvironment());
-        if(metadata == null) {
+        if (metadata == null) {
             return null;
         }
 
@@ -414,8 +413,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
         if (plugin != null) {
             if (!plugin.isEnabled(lookupSpringEnvironment().getActiveProfiles())) return;
             plugin.notifyOfEvent(GrailsPlugin.EVENT_ON_CHANGE, aClass);
-        }
-        else {
+        } else {
             String classNameAsPath = aClass.getName().replace('.', File.separatorChar);
             String groovyClass = classNameAsPath + ".groovy";
             String javaClass = classNameAsPath + ".java";
@@ -430,8 +428,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
                             File f = new File(parent, groovyClass);
                             if (f.exists() && f.getName().endsWith(extension)) {
                                 grailsPlugin.notifyOfEvent(GrailsPlugin.EVENT_ON_CHANGE, aClass);
-                            }
-                            else {
+                            } else {
                                 f = new File(parent, javaClass);
                                 if (f.exists() && f.getName().endsWith(extension)) {
                                     grailsPlugin.notifyOfEvent(GrailsPlugin.EVENT_ON_CHANGE, aClass);
@@ -477,7 +474,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
     public GrailsPlugin getPluginForClass(Class<?> theClass) {
         if (theClass != null) {
             grails.plugins.metadata.GrailsPlugin ann =
-                theClass.getAnnotation(grails.plugins.metadata.GrailsPlugin.class);
+                    theClass.getAnnotation(grails.plugins.metadata.GrailsPlugin.class);
             if (ann != null) {
                 return getGrailsPlugin(ann.name());
             }
@@ -531,8 +528,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
                 // ignore
                 LOG.debug("Error in changing Config", e);
             }
-        }
-        else {
+        } else {
 
             if (cls != null) {
                 MetaClassRegistry registry = GroovySystem.getMetaClassRegistry();
@@ -555,8 +551,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
                     try {
                         if (cls == null) {
                             grailsPlugin.notifyOfEvent(GrailsPlugin.EVENT_ON_CHANGE, new FileSystemResource(file));
-                        }
-                        else {
+                        } else {
                             grailsPlugin.notifyOfEvent(GrailsPlugin.EVENT_ON_CHANGE, cls);
                         }
                         Environment.setCurrentReloadError(null);
@@ -583,7 +578,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
     public String getPluginPathForClass(Class<?> theClass) {
         if (theClass != null) {
             grails.plugins.metadata.GrailsPlugin ann =
-                theClass.getAnnotation(grails.plugins.metadata.GrailsPlugin.class);
+                    theClass.getAnnotation(grails.plugins.metadata.GrailsPlugin.class);
             if (ann != null) {
                 return getPluginPath(ann.name());
             }

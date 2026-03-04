@@ -22,15 +22,14 @@ import groovy.lang.GroovySystem;
 import groovy.lang.MetaClassRegistry;
 
 import org.springframework.context.ApplicationContext;
-import org.springframework.core.io.Resource;
 
 import grails.core.GrailsApplication;
 import grails.plugins.DefaultGrailsPluginManager;
 import grails.plugins.GrailsPlugin;
 import grails.plugins.exceptions.PluginException;
+import org.apache.grails.core.plugins.GrailsPluginDiscovery;
 import org.grails.core.exceptions.GrailsConfigurationException;
 import org.grails.spring.RuntimeSpringConfiguration;
-import org.apache.grails.core.plugins.GrailsPluginDiscovery;
 
 /**
  * A GrailsPluginManager implementation that outputs profile data to a logger.
@@ -71,8 +70,7 @@ public class ProfilingGrailsPluginManager extends DefaultGrailsPluginManager {
                     plugin.doWithDynamicMethods(applicationContext);
 
                     System.out.println("doWithDynamicMethods for plugin [" + plugin.getName() + "] took " + (System.currentTimeMillis() - pluginTime));
-                }
-                catch (Throwable t) {
+                } catch (Throwable t) {
                     throw new GrailsConfigurationException("Error configuring dynamic methods for plugin " + plugin + ": " + t.getMessage(), t);
                 }
             }

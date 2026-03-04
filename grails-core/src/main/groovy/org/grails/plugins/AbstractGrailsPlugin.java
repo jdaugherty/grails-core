@@ -34,7 +34,6 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.PropertySource;
 import org.springframework.util.Assert;
 
-import grails.boot.config.GrailsEnvironmentPostProcessor;
 import grails.config.Config;
 import grails.core.GrailsApplication;
 import grails.plugins.GrailsPlugin;
@@ -88,7 +87,7 @@ public abstract class AbstractGrailsPlugin extends GroovyObjectSupport implement
      *
      * <p>Plugin configuration files ({@code plugin.yml} or {@code plugin.groovy}) are loaded
      * early in the application lifecycle by
-     * {@link GrailsEnvironmentPostProcessor} and registered as named
+     * {@link grails.boot.config.GrailsEnvironmentPostProcessor} and registered as named
      * property sources in the environment. This method looks up the property source by the
      * expected name ({@code "<pluginName>-plugin.yml"} or {@code "<pluginName>-plugin.groovy"}).</p>
      *

@@ -40,7 +40,7 @@ public class PluginFilterRetriever {
     private PluginFilter filter;
 
     public PluginFilter getPluginFilter(Environment environment) {
-        if(filter != null) {
+        if (filter != null) {
             return filter;
         }
 
@@ -49,26 +49,26 @@ public class PluginFilterRetriever {
     }
 
     private PluginFilter findPluginFilter(Environment environment) {
-        if(environment == null) {
+        if (environment == null) {
             throw new IllegalArgumentException("Environment cannot be null");
         }
 
         Binder binder = Binder.get(environment);
         List<String> includes = binder.bind(Settings.PLUGIN_INCLUDES, Bindable.listOf(String.class)).orElse(null);
-        if(includes != null && !includes.isEmpty()) {
+        if (includes != null && !includes.isEmpty()) {
             return new IncludingPluginFilter(toSet(includes));
         }
         String includesCompatibility = environment.getProperty(Settings.PLUGIN_INCLUDES);
-        if(StringUtils.hasText(includesCompatibility)) {
+        if (StringUtils.hasText(includesCompatibility)) {
             return new IncludingPluginFilter(toSet(StringUtils.commaDelimitedListToSet(includesCompatibility)));
         }
 
         List<String> excludes = binder.bind(Settings.PLUGIN_EXCLUDES, Bindable.listOf(String.class)).orElse(null);
-        if(excludes != null && !excludes.isEmpty()) {
+        if (excludes != null && !excludes.isEmpty()) {
             return new ExcludingPluginFilter(toSet(excludes));
         }
         String excludesCompatibility = environment.getProperty(Settings.PLUGIN_EXCLUDES);
-        if(StringUtils.hasText(excludesCompatibility)) {
+        if (StringUtils.hasText(excludesCompatibility)) {
             return new ExcludingPluginFilter(toSet(StringUtils.commaDelimitedListToSet(excludesCompatibility)));
         }
 

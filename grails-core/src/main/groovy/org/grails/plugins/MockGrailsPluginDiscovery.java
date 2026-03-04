@@ -33,7 +33,7 @@ public class MockGrailsPluginDiscovery extends GrailsPluginDiscovery {
     }
 
     private void initPluginsIfNotDefined() {
-        if(plugins == null) {
+        if (plugins == null) {
             reset();
         }
     }

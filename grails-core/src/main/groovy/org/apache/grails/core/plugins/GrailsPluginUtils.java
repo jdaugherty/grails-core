@@ -186,7 +186,7 @@ public class GrailsPluginUtils {
      *         not a valid Grails plugin
      */
     public static GrailsPluginLoadMetadata extractPluginMetadata(Class<?> pluginClass) {
-        if(!isGrailsPluginClassNamedCorrectly(pluginClass)) {
+        if (!isGrailsPluginClassNamedCorrectly(pluginClass)) {
             return null;
         }
 
@@ -258,7 +258,7 @@ public class GrailsPluginUtils {
     }
 
     private static Map<String, Set<Object>> evaluatePluginEnvironments(BeanWrapper beanWrapper, Object pluginInstance) {
-        if(!beanWrapper.isReadableProperty(GrailsPlugin.ENVIRONMENTS)) {
+        if (!beanWrapper.isReadableProperty(GrailsPlugin.ENVIRONMENTS)) {
             return new HashMap<>();
         }
 
@@ -272,7 +272,7 @@ public class GrailsPluginUtils {
     }
 
     private static String[] evaluatePluginLoadAfters(BeanWrapper beanWrapper, Object pluginInstance, String pluginName) {
-        if(!beanWrapper.isReadableProperty(GrailsPlugin.PLUGIN_LOAD_AFTER_NAMES)) {
+        if (!beanWrapper.isReadableProperty(GrailsPlugin.PLUGIN_LOAD_AFTER_NAMES)) {
             return new String[0];
         }
 
@@ -285,7 +285,7 @@ public class GrailsPluginUtils {
     }
 
     private static String[] evaluatePluginLoadBefores(BeanWrapper beanWrapper, Object pluginInstance, String pluginName) {
-        if(!beanWrapper.isReadableProperty(GrailsPlugin.PLUGIN_LOAD_BEFORE_NAMES)) {
+        if (!beanWrapper.isReadableProperty(GrailsPlugin.PLUGIN_LOAD_BEFORE_NAMES)) {
             return new String[0];
         }
 
@@ -329,7 +329,7 @@ public class GrailsPluginUtils {
     }
 
     private static String evaluatePluginStatus(BeanWrapper beanWrapper, Object plugin) {
-        if(plugin instanceof Plugin) {
+        if (plugin instanceof Plugin) {
             return ((Plugin) plugin).enabled ? DefaultGrailsPlugin.STATUS_ENABLED : DefaultGrailsPlugin.STATUS_DISABLED;
         }
 
@@ -345,7 +345,9 @@ public class GrailsPluginUtils {
         return DefaultGrailsPlugin.STATUS_ENABLED;
     }
 
-    private record PluginDependencies(String[] dependencyNames, Map<String, Object> dependencies) {}
+    private record PluginDependencies(String[] dependencyNames, Map<String, Object> dependencies) {
+
+    }
 
     private static PluginDependencies evaluatePluginDependencies(BeanWrapper beanWrapper, Object plugin) {
         try {
@@ -364,10 +366,9 @@ public class GrailsPluginUtils {
         try {
             final Object grailsVersionValue = GrailsClassUtils.getPropertyOrStaticPropertyOrFieldValue(pluginInstance, PLUGIN_GRAILS_VERSION_FIELD);
             return grailsVersionValue != null ? grailsVersionValue.toString() : null;
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             LOG.warn("Could not determine Grails Plugin Version for plugin [{}], assuming compatible", pluginName);
-            if(LOG.isDebugEnabled()) {
+            if (LOG.isDebugEnabled()) {
                 LOG.debug(e.getMessage(), e);
             }
             return null;
@@ -471,7 +472,7 @@ public class GrailsPluginUtils {
             //exact version compatibility required
             if (!grailsVersion.equals(pluginMinGrailsVersion)) {
                 LOG.warn("Plugin [{}:{}] may not be compatible with this application as the application Grails version is not equal" +
-                        " to the one that plugin requires. Plugin is compatible with Grails version {} but app is {}",
+                                " to the one that plugin requires. Plugin is compatible with Grails version {} but app is {}",
                         pluginDescription, pluginVersion, pluginSupportedVersion, grailsVersion);
                 return false;
             }
@@ -482,7 +483,7 @@ public class GrailsPluginUtils {
             // minimum version required by plugin cannot be greater than grails app version
             if (comparator.compare(pluginMinGrailsVersion, grailsVersion) > 0) {
                 LOG.warn("Plugin [{}:{}] may not be compatible with this application as the application Grails version is less" +
-                        " than the plugin requires. Plugin is compatible with Grails version {} but app is {}",
+                                " than the plugin requires. Plugin is compatible with Grails version {} but app is {}",
                         pluginDescription, pluginVersion, pluginSupportedVersion, grailsVersion);
                 return false;
             }
@@ -492,7 +493,7 @@ public class GrailsPluginUtils {
             // minimum version required by plugin cannot be greater than grails app version
             if (comparator.compare(pluginMinGrailsVersion, grailsVersion) > 0) {
                 LOG.warn("Plugin [{}:{}] may not be compatible with this application as the application Grails version is less" +
-                        " than the plugin requires. Plugin is compatible with Grails version {} but app is {}",
+                                " than the plugin requires. Plugin is compatible with Grails version {} but app is {}",
                         pluginDescription, pluginVersion, pluginSupportedVersion, grailsVersion);
                 return false;
             }
@@ -500,7 +501,7 @@ public class GrailsPluginUtils {
             // maximum version required by plugin cannot be less than grails app version
             if (comparator.compare(pluginMaxGrailsVersion, grailsVersion) < 0) {
                 LOG.warn("Plugin [{}:{}] may not be compatible with this application as the application Grails version is greater" +
-                        " than the plugins max specified. Plugin is compatible with Grails versions {} but app is {}",
+                                " than the plugins max specified. Plugin is compatible with Grails versions {} but app is {}",
                         pluginDescription, pluginVersion, pluginSupportedVersion, grailsVersion);
                 return false;
             }
@@ -509,7 +510,7 @@ public class GrailsPluginUtils {
         return true;
     }
 
-    public static Map<String, Set<Object>> evaluateIncludeExcludeProperty(Object pluginBean, String name, Function<Object, Object>  converter) {
+    public static Map<String, Set<Object>> evaluateIncludeExcludeProperty(Object pluginBean, String name, Function<Object, Object> converter) {
         Map<String, Set<Object>> resultMap = new HashMap<>();
         Object propertyValue = GrailsClassUtils.getPropertyOrStaticPropertyOrFieldValue(pluginBean, name);
         if (propertyValue instanceof Map) {
@@ -520,25 +521,23 @@ public class GrailsPluginUtils {
 
             Object excludes = containedMap.get(DefaultGrailsPlugin.EXCLUDES);
             evaluateAndAddIncludeExcludeObject(resultMap, excludes, false, converter);
-        }
-        else {
+        } else {
             evaluateAndAddIncludeExcludeObject(resultMap, propertyValue, true, converter);
         }
         return resultMap;
     }
 
-    private static void evaluateAndAddIncludeExcludeObject(Map<String, Set<Object>> targetMap, Object includeExcludeObject, boolean include, Function<Object, Object>  converter) {
+    private static void evaluateAndAddIncludeExcludeObject(Map<String, Set<Object>> targetMap, Object includeExcludeObject, boolean include, Function<Object, Object> converter) {
         if (includeExcludeObject instanceof String) {
             final String includeExcludeString = (String) includeExcludeObject;
             evaluateAndAddToIncludeExcludeSet(targetMap, includeExcludeString, include, converter);
-        }
-        else if (includeExcludeObject instanceof List) {
+        } else if (includeExcludeObject instanceof List) {
             List includeExcludeList = (List) includeExcludeObject;
             evaluateAndAddListOfValues(targetMap, includeExcludeList, include, converter);
         }
     }
 
-    private static void evaluateAndAddListOfValues(Map targetMap, List includeExcludeList, boolean include, Function<Object, Object>  converter) {
+    private static void evaluateAndAddListOfValues(Map targetMap, List includeExcludeList, boolean include, Function<Object, Object> converter) {
         for (Object value : includeExcludeList) {
             if (value instanceof String) {
                 final String scopeName = (String) value;

@@ -13,7 +13,7 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 class PluginXmlHandler extends DefaultHandler {
 
-    private enum ParseState {IDLE, TYPE, RESOURCE}
+    private enum ParseState { IDLE, TYPE, RESOURCE }
 
     private ParseState state = ParseState.IDLE;
     private final List<String> pluginTypes = new ArrayList<>();
