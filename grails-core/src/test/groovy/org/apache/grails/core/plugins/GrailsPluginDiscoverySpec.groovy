@@ -95,12 +95,25 @@ class GrailsPluginDiscoverySpec extends Specification {
     }
 
      def "scanPluginDescriptors delegates to scanPluginDescriptorResources and extracts class names"() {
-         when:
-         def classNames = GrailsPluginUtils.scanPluginDescriptors(
-                 Thread.currentThread().getContextClassLoader())
+         given: "A grails-plugin.xml with known <type> elements"
+         def xml = '''<plugin name='test'>
+             <type>com.example.AlphaGrailsPlugin</type>
+             <type>com.example.BetaGrailsPlugin</type>
+         </plugin>'''
+         def tempDir = File.createTempDir()
+         def metaInfDir = new File(tempDir, 'META-INF')
+         metaInfDir.mkdirs()
+         new File(metaInfDir, 'grails-plugin.xml').text = xml
+         def classLoader = new URLClassLoader([tempDir.toURI().toURL()] as URL[], (ClassLoader) null)
 
-         then: "Returns class names from <resource> elements in grails-plugin.xml (not <type> elements)"
-         classNames == ['grails.boot.WatchedResourcesGrailsPlugin', 'org.grails.plugins.CoreGrailsPlugin', 'org.grails.plugins.domain.DomainClassGrailsPlugin']
+         when:
+         def classNames = GrailsPluginUtils.scanPluginDescriptors(classLoader)
+
+         then: "Returns class names from <type> elements in grails-plugin.xml"
+         classNames == ['com.example.AlphaGrailsPlugin', 'com.example.BetaGrailsPlugin']
+
+         cleanup:
+         tempDir.deleteDir()
      }
 
     def "scanPluginDescriptors returns empty list for classloader with no grails-plugin.xml"() {
