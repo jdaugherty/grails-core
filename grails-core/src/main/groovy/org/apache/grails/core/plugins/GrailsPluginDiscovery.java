@@ -150,7 +150,7 @@ public class GrailsPluginDiscovery {
         }
 
         GrailsPluginInfo plugin = plugins.get(GrailsPluginUtils.normalizePluginName(pluginName));
-        if (plugin != null && GrailsVersionUtils.isValidVersion(plugin.grailsVersion(), version.toString())) {
+        if (plugin != null && GrailsVersionUtils.isValidVersion(plugin.pluginVersion(), version.toString())) {
             return plugin;
         }
         return null;
