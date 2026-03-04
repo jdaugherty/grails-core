@@ -160,8 +160,8 @@ class GrailsApplicationBuilder {
 
     protected GrailsPluginDiscovery registerPluginDiscoveryBean(ConfigurableBeanFactory beanFactory) {
         GrailsPluginDiscovery discovery = new GrailsPluginDiscovery()
-        discovery.setLoadClasspathPlugins(false) // performance optimization, since we'll only want to load the specified included plugins
-        discovery.setPluginFilter(new IncludingPluginFilter(includePlugins))
+        // we must load the classpath since the plugin manager needs to find the default plugins
+        discovery.setPluginFilter(new IncludingPluginFilter(includePlugins ?: DEFAULT_INCLUDED_PLUGINS))
         (beanFactory as DefaultListableBeanFactory).registerSingleton(GrailsPluginDiscovery.BEAN_NAME, discovery)
         discovery
     }
@@ -227,8 +227,7 @@ class GrailsApplicationBuilder {
 
         def constructorArgumentValues = new ConstructorArgumentValues()
         constructorArgumentValues.addIndexedArgumentValue(0, doWithSpringClosure)
-        constructorArgumentValues.addIndexedArgumentValue(1, includePlugins ?: DEFAULT_INCLUDED_PLUGINS)
-        constructorArgumentValues.addIndexedArgumentValue(2, pluginDiscovery)
+        constructorArgumentValues.addIndexedArgumentValue(1, pluginDiscovery)
 
         def values = new MutablePropertyValues()
         values.add('localOverride', localOverride)
@@ -243,14 +242,12 @@ class GrailsApplicationBuilder {
     static class TestRuntimeGrailsApplicationPostProcessor extends GrailsApplicationPostProcessor {
 
         Closure customizeGrailsApplicationClosure
-        Set includedPlugins
         boolean localOverride = false
 
-        TestRuntimeGrailsApplicationPostProcessor(Closure doWithSpringClosure, Set includedPlugins, GrailsPluginDiscovery pluginDiscovery) {
+        TestRuntimeGrailsApplicationPostProcessor(Closure doWithSpringClosure, GrailsPluginDiscovery pluginDiscovery) {
             super([doWithSpring: { -> doWithSpringClosure }] as GrailsApplicationLifeCycle, null, pluginDiscovery)
             loadExternalBeans = false
             reloadingEnabled = false
-            this.includedPlugins = includedPlugins
         }
 
         @Override

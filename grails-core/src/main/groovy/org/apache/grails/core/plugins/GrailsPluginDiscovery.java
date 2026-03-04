@@ -84,6 +84,7 @@ public class GrailsPluginDiscovery {
     protected Map<GrailsPluginInfo, String[]> delayedEvictions;
     protected PluginFilter pluginFilter;
     protected boolean loadClasspathPlugins = true;
+    protected boolean requireClasspathPlugin = true;
     protected final PluginFilterRetriever filterRetriever;
 
     public GrailsPluginDiscovery() {
@@ -141,8 +142,8 @@ public class GrailsPluginDiscovery {
     }
 
     public GrailsPluginInfo getPlugin(String pluginName, Object version, Environment environment) {
-        if(plugins == null) {
-            if(environment == null) {
+        if (plugins == null) {
+            if (environment == null) {
                 throw new IllegalArgumentException("Environment must be provided to fetch a plugin");
             }
             findPlugins(environment);
@@ -160,8 +161,8 @@ public class GrailsPluginDiscovery {
     }
 
     public GrailsPluginInfo getPlugin(String pluginName, Environment environment) {
-        if(plugins == null) {
-            if(environment == null) {
+        if (plugins == null) {
+            if (environment == null) {
                 throw new IllegalArgumentException("Environment must be provided to fetch a plugin");
             }
 
@@ -203,7 +204,7 @@ public class GrailsPluginDiscovery {
      * @return plugins ordered by a topographical sort.
      */
     public Collection<GrailsPluginInfo> getOrderedPlugins(Environment environment) {
-        if(orderedPlugins == null) {
+        if (orderedPlugins == null) {
             findPlugins(environment);
         }
 
@@ -214,7 +215,7 @@ public class GrailsPluginDiscovery {
      * @return the order the plugins were loaded in.
      */
     public Collection<GrailsPluginInfo> getLoadOrderedPlugins(Environment environment) {
-        if(loadOrderedPlugins == null) {
+        if (loadOrderedPlugins == null) {
             findPlugins(environment);
         }
 
@@ -223,6 +224,10 @@ public class GrailsPluginDiscovery {
 
     public void setLoadClasspathPlugins(boolean loadClasspathPlugins) {
         this.loadClasspathPlugins = loadClasspathPlugins;
+    }
+
+    public void setRequireClasspathPlugin(boolean requireClasspathPlugin) {
+        this.requireClasspathPlugin = requireClasspathPlugin;
     }
 
     public void setPluginFilter(PluginFilter filter) {
@@ -252,7 +257,7 @@ public class GrailsPluginDiscovery {
     LinkedHashMap<String, GrailsPluginInfo> findPlugins(Environment environment) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         List<GrailsPluginInfo> classpathPlugins = loadClasspathPlugins ? findClasspathPlugins(classLoader) : Collections.emptyList();
-        if (loadClasspathPlugins && classpathPlugins.isEmpty()) {
+        if (loadClasspathPlugins && requireClasspathPlugin && classpathPlugins.isEmpty()) {
             LOG.debug("No Grails plugin classes found in META-INF/grails-plugin.xml descriptors");
             throw new IllegalStateException(
                     "Grails was unable to load plugins dynamically. This is normally a " +
@@ -468,10 +473,9 @@ public class GrailsPluginDiscovery {
                     GrailsPluginInfo pluginInfo = GrailsPluginUtils.createPluginInfo(pluginClass, r, true);
                     pluginInfo.isGrailsVersionCompatible(applicationMeta.getGrailsVersion());
                     discoveredPlugins.add(pluginInfo);
-                }
-                catch(Exception e) {
+                } catch (Exception e) {
                     LOG.warn("Error loading plugin class [{}]; skipping", pluginClass.getName());
-                    if(LOG.isDebugEnabled()) {
+                    if (LOG.isDebugEnabled()) {
                         LOG.debug(e.getMessage(), e);
                     }
                 }
@@ -486,10 +490,9 @@ public class GrailsPluginDiscovery {
                     GrailsPluginInfo pluginInfo = GrailsPluginUtils.createPluginInfo(pluginClass, null, true);
                     pluginInfo.isGrailsVersionCompatible(applicationMeta.getGrailsVersion());
                     discoveredPlugins.add(pluginInfo);
-                }
-                catch(Exception e) {
+                } catch (Exception e) {
                     LOG.warn("Error loading plugin class [{}]; skipping", pluginClass.getName());
-                    if(LOG.isDebugEnabled()) {
+                    if (LOG.isDebugEnabled()) {
                         LOG.debug(e.getMessage(), e);
                     }
                 }
