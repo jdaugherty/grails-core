@@ -18,9 +18,13 @@
  */
 package org.grails.plugins
 
+import org.springframework.core.env.StandardEnvironment
+
 import grails.core.DefaultGrailsApplication
 import grails.plugins.DefaultGrailsPluginManager
 import org.junit.jupiter.api.Test
+
+import grails.plugins.GrailsPlugin
 import org.apache.grails.core.plugins.GrailsPluginDiscovery
 
 import static org.junit.jupiter.api.Assertions.assertEquals
@@ -65,16 +69,19 @@ class ThreeGrailsPlugin {
         def five = gcl.loadClass("FiveGrailsPlugin")
         GrailsPluginDiscovery pluginDiscovery = new GrailsPluginDiscovery([one, two, three, four, five] as Class[],)
         pluginDiscovery.loadClasspathPlugins = false
+        pluginDiscovery.getPlugins(new StandardEnvironment());
         def pluginManager = new DefaultGrailsPluginManager(
                 new DefaultGrailsApplication(),
                 pluginDiscovery
         )
         pluginManager.loadPlugins()
 
-        assertEquals "one", pluginManager.pluginList[0].name
-        assertEquals "three", pluginManager.pluginList[1].name
-        assertEquals "five", pluginManager.pluginList[2].name
-        assertEquals "two", pluginManager.pluginList[3].name
-        assertEquals "four", pluginManager.pluginList[4].name
+        GrailsPlugin[] plugins = pluginManager.allPlugins
+
+        assertEquals "one", plugins[0].name
+        assertEquals "three", plugins[1].name
+        assertEquals "five", plugins[2].name
+        assertEquals "two", plugins[3].name
+        assertEquals "four", plugins[4].name
     }
 }
