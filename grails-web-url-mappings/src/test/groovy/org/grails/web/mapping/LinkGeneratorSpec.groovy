@@ -18,6 +18,8 @@
  */
 package org.grails.web.mapping
 
+import org.springframework.core.env.StandardEnvironment
+
 import grails.artefact.Artefact
 import grails.core.DefaultGrailsApplication
 import grails.plugins.DefaultGrailsPluginManager
@@ -161,6 +163,8 @@ class LinkGeneratorSpec extends Specification {
     def "plugin paths are resolved with the plugin attribute"() {
         given:
             plugins = [CoreGrailsPlugin]
+
+        and:
 
         and:
             def pluginName = "core"
@@ -420,7 +424,9 @@ class LinkGeneratorSpec extends Specification {
 
     protected setPlugins(List<Class> pluginClasses) {
         def app = new DefaultGrailsApplication()
-        pluginManager = new DefaultGrailsPluginManager(app, new GrailsPluginDiscovery(pluginClasses as Class[]))
+        def pluginDiscovery = new GrailsPluginDiscovery(pluginClasses as Class[])
+        pluginDiscovery.getPlugins(new StandardEnvironment())
+        pluginManager = new DefaultGrailsPluginManager(app, pluginDiscovery)
         pluginManager.loadPlugins()
     }
 }
