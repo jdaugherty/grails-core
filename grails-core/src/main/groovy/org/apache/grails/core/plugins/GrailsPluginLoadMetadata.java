@@ -37,7 +37,7 @@ import grails.util.Environment;
  *        transitive dependency resolution during filtering, not for
  *        sort ordering)
  * @param environments the environments this plugin is enabled for, or empty if enabled for all environments
- * @param status the status of the plugin
+ * @param enabled if the plugin is enabled
  */
 public record GrailsPluginLoadMetadata(
         String name,
