@@ -51,6 +51,8 @@ To re-enable invokedynamic, use the `grails` extension in your `build.gradle`:
 
 Spring Boot's `@Configuration` related classes have support for conditional bean wiring. In prior versions of Grails, annotations such as `@ConditionalOnProperty` could not be used for configuration stored in a plugin's `plugin.groovy` or `plugin.yml` files. To support plugin configuration, plugin loading & configuration were split in Grails 7.1.x. Plugin loading related code was thus reworked and may break some applications if they relied on their own plugin loader.
 
+WARNING: As a result of these changes, if your application extends the `GrailsApplicationPostProcessor` or `DefaultGrailsPluginManager` there are breaking constructor changes.  A new class, `GrailsPluginDiscovery`, was extracted from the Grails Plugin Manager logic and is now a dependency of these classes.
+
 ===== 2.2 Greedy Extension Parameter Matching in URL Mappings
 
 Grails 7.1 introduces a new greedy extension parameter marker (`+`) for URL mappings that provides more intuitive handling of file extensions in URLs with multiple dots.
