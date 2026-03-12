@@ -134,11 +134,10 @@ class GrailsPluginSorterSpec extends Specification {
         def lookup = { String name -> plugins.find { it.name == name } }
 
         when:
-        def sorted = GrailsPluginSorter.<TestPlugin>sort(
+        def sorted = GrailsPluginSorter.<TestPlugin>sortPlugins(
                 plugins,
-                { it.name },
-                { it.loadAfter as String[] },
-                { it.loadBefore as String[] },
+                { TestPlugin it -> it.loadAfter as String[] },
+                { TestPlugin it -> it.loadBefore as String[] },
                 lookup
         )
 

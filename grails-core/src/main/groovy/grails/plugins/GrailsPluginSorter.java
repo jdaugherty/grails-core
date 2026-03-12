@@ -70,21 +70,19 @@ public final class GrailsPluginSorter {
      *
      * <p>This is the single canonical sort algorithm used across the framework to
      * ensure that plugin load order is identical whether plugins are loaded early
-     * (by the {@code EnvironmentPostProcessor} for configuration) or later (by the
-     * {@code DefaultGrailsPluginManager} for full lifecycle).</p>
+     * (by the {@code grails.boot.config.GrailsEnvironmentPostProcessor} for configuration)
+     * or later (by the {@code grails.plugins.DefaultGrailsPluginManager} for full lifecycle).</p>
      *
      * @param <T>               the plugin type
      * @param plugins           the plugins to sort
-     * @param nameExtractor     extracts the logical plugin name from a plugin
      * @param loadAfterExtractor extracts the {@code loadAfter} names from a plugin
      * @param loadBeforeExtractor extracts the {@code loadBefore} names from a plugin
      * @param pluginLookup      resolves a plugin by its logical name (returns {@code null}
      *                          if the named plugin is not present)
      * @return a new list with the plugins in topological order
      */
-    public static <T> List<T> sort(
+    static <T> List<T> sortPlugins(
             List<T> plugins,
-            Function<T, String> nameExtractor,
             Function<T, String[]> loadAfterExtractor,
             Function<T, String[]> loadBeforeExtractor,
             Function<String, T> pluginLookup) {
@@ -127,8 +125,7 @@ public final class GrailsPluginSorter {
             pluginsByName.putIfAbsent(nameExtractor.apply(plugin), plugin);
         }
 
-        return sort(plugins, nameExtractor, loadAfterExtractor,
-                loadBeforeExtractor, pluginsByName::get);
+        return sortPlugins(plugins, loadAfterExtractor, loadBeforeExtractor, pluginsByName::get);
     }
 
     /**
