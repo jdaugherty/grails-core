@@ -118,7 +118,7 @@ hibernate {
 
     void testDefaultGrailsPluginManager() {
         def discovery = new GrailsPluginDiscovery(RESOURCE_PATH)
-        DefaultGrailsPluginManager manager = new DefaultGrailsPluginManager(ga, discovery)
+        new DefaultGrailsPluginManager(ga, discovery)
         assertEquals(1, discovery.getPluginResources().length)
     }
 
