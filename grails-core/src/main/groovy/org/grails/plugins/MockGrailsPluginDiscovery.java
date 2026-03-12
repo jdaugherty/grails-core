@@ -19,11 +19,11 @@
 package org.grails.plugins;
 
 import grails.plugins.GrailsPlugin;
-import org.apache.grails.core.plugins.GrailsPluginDiscovery;
+import org.apache.grails.core.plugins.DefaultGrailsPluginDiscovery;
 import org.apache.grails.core.plugins.GrailsPluginInfo;
 import org.apache.grails.core.plugins.GrailsPluginUtils;
 
-public class MockGrailsPluginDiscovery extends GrailsPluginDiscovery {
+public class MockGrailsPluginDiscovery extends DefaultGrailsPluginDiscovery {
 
     public MockGrailsPluginDiscovery() {
         super();

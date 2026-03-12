@@ -21,6 +21,8 @@ package grails.plugins;
 import grails.core.DefaultGrailsApplication;
 import grails.core.GrailsApplication;
 import groovy.lang.GroovyClassLoader;
+
+import org.apache.grails.core.plugins.DefaultGrailsPluginDiscovery;
 import org.apache.grails.core.plugins.filters.IncludingPluginFilter;
 import org.apache.grails.core.plugins.GrailsPluginDiscovery;
 import org.junit.jupiter.api.Test;
@@ -68,9 +70,9 @@ public class DefaultGrailsPluginManagerTests {
         var parent = new GenericApplicationContext();
         parent.getDefaultListableBeanFactory().registerSingleton(GrailsApplication.APPLICATION_ID, app);
 
-        var discovery = new GrailsPluginDiscovery(new Class[]{first, second, third, fourth});
+        var discovery = new DefaultGrailsPluginDiscovery(new Class[]{first, second, third, fourth});
         discovery.setPluginFilter(new IncludingPluginFilter("dataSource", "first", "third"));
-        discovery.getPlugins(new StandardEnvironment());
+        discovery.init(new StandardEnvironment());
         parent.getDefaultListableBeanFactory().registerSingleton(GrailsPluginDiscovery.BEAN_NAME, discovery);
         var manager = new DefaultGrailsPluginManager(app, discovery);
         manager.setParentApplicationContext(parent);
@@ -125,9 +127,9 @@ public class DefaultGrailsPluginManagerTests {
         parent.getDefaultListableBeanFactory().registerSingleton(GrailsApplication.APPLICATION_ID, app);
 
         // Set plugin filter on discovery before loading plugins
-        var discovery = new GrailsPluginDiscovery(new Class[]{first, second, third});
+        var discovery = new DefaultGrailsPluginDiscovery(new Class[]{first, second, third});
         discovery.setPluginFilter(new IncludingPluginFilter("dataSource", "first", "second", "third"));
-        discovery.getPlugins(new StandardEnvironment());
+        discovery.init(new StandardEnvironment());
         parent.getDefaultListableBeanFactory().registerSingleton(GrailsPluginDiscovery.BEAN_NAME, discovery);
         var manager = new DefaultGrailsPluginManager(app, discovery);
         manager.setParentApplicationContext(parent);
@@ -194,9 +196,9 @@ public class DefaultGrailsPluginManagerTests {
         parent.getDefaultListableBeanFactory().registerSingleton(GrailsApplication.APPLICATION_ID, app);
 
         // Set plugin filter on discovery before loading plugins
-        var discovery = new GrailsPluginDiscovery(new Class[]{first, second, third, fourth});
+        var discovery = new DefaultGrailsPluginDiscovery(new Class[]{first, second, third, fourth});
         discovery.setPluginFilter(new IncludingPluginFilter("first", "second", "third", "fourth"));
-        discovery.getPlugins(new StandardEnvironment());
+        discovery.init(new StandardEnvironment());
         var manager = new DefaultGrailsPluginManager(app, discovery);
         manager.setParentApplicationContext(parent);
 

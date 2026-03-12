@@ -95,16 +95,8 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
         this.pluginDiscovery = pluginDiscovery;
     }
 
-    protected org.springframework.core.env.Environment lookupSpringEnvironment() {
-        // the application context should realistically be set since the GrailsPluginManager is ApplicationContextAware
-        // so it will always be set after the constructor, however, there is a long history of tests not setting it
-        // since the pluginDiscovery will always be initialized first, allow the null behavior
-        // (the code that requirements the environment will hard error if it's not set up)
-        return applicationContext != null ? applicationContext.getEnvironment() : null;
-    }
-
     public List<TypeFilter> getTypeFilters() {
-        return pluginDiscovery.getOrderedPlugins(lookupSpringEnvironment())
+        return pluginDiscovery.getOrderedPlugins()
                 .stream()
                 .map(GrailsPluginInfo::name)
                 .map(plugins::get)
@@ -116,7 +108,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
     }
 
     public GrailsPlugin[] getAllPlugins() {
-        return pluginDiscovery.getOrderedPlugins(lookupSpringEnvironment())
+        return pluginDiscovery.getOrderedPlugins()
                 .stream()
                 .map(GrailsPluginInfo::name)
                 .map(plugins::get)
@@ -176,7 +168,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
             });
         }
         checkInitialised();
-        for (GrailsPluginInfo metadata : pluginDiscovery.getOrderedPlugins(context.getEnvironment())) {
+        for (GrailsPluginInfo metadata : pluginDiscovery.getOrderedPlugins()) {
             GrailsPlugin plugin = plugins.get(metadata.name());
             if (plugin.supportsCurrentScopeAndEnvironment() && plugin.isEnabled(context.getEnvironment().getActiveProfiles())) {
                 plugin.doWithRuntimeConfiguration(springConfig);
@@ -198,7 +190,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
             return;
         }
 
-        if (!plugin.isEnabled(lookupSpringEnvironment().getActiveProfiles())) return;
+        if (!plugin.isEnabled(applicationContext.getEnvironment().getActiveProfiles())) return;
 
         String[] dependencyNames = plugin.getDependencyNames();
         doRuntimeConfigurationForDependencies(dependencyNames, springConfig);
@@ -234,7 +226,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
     public void doPostProcessing(ApplicationContext ctx) {
         checkInitialised();
 
-        for (GrailsPluginInfo metadata : pluginDiscovery.getOrderedPlugins(lookupSpringEnvironment())) {
+        for (GrailsPluginInfo metadata : pluginDiscovery.getOrderedPlugins()) {
             GrailsPlugin plugin = plugins.get(metadata.name());
             if (isPluginDisabledForProfile(plugin)) continue;
             if (plugin.supportsCurrentScopeAndEnvironment()) {
@@ -244,7 +236,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
     }
 
     public GrailsPlugin getGrailsPlugin(String name) {
-        GrailsPluginInfo metadata = pluginDiscovery.getPlugin(name, lookupSpringEnvironment());
+        GrailsPluginInfo metadata = pluginDiscovery.getPlugin(name);
         if (metadata == null) {
             return null;
         }
@@ -257,7 +249,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
     }
 
     public GrailsPlugin getGrailsPlugin(String name, Object version) {
-        GrailsPluginInfo metadata = pluginDiscovery.getPlugin(name, version, lookupSpringEnvironment());
+        GrailsPluginInfo metadata = pluginDiscovery.getPlugin(name, version);
         if (metadata == null) {
             return null;
         }
@@ -279,7 +271,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
             }
             ApplicationContext ctx = applicationContext;
             for (GrailsPlugin plugin : getOrderedPlugins()) {
-                if (!plugin.isEnabled(lookupSpringEnvironment().getActiveProfiles())) continue;
+                if (!plugin.isEnabled(ctx.getEnvironment().getActiveProfiles())) continue;
                 plugin.doWithDynamicMethods(ctx);
             }
         }
@@ -304,7 +296,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
     }
 
     protected List<GrailsPlugin> getOrderedPlugins() {
-        Collection<GrailsPluginInfo> orderedPluginInfos = pluginDiscovery.getOrderedPlugins(null);
+        Collection<GrailsPluginInfo> orderedPluginInfos = pluginDiscovery.getOrderedPlugins();
         if (orderedPluginInfos == null) {
             return new ArrayList<>();
         }
@@ -360,7 +352,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
     }
 
     protected boolean isPluginDisabledForProfile(GrailsPlugin plugin) {
-        return applicationContext != null && !plugin.isEnabled(lookupSpringEnvironment().getActiveProfiles());
+        return applicationContext != null && !plugin.isEnabled(applicationContext.getEnvironment().getActiveProfiles());
     }
 
     public void onStartup(Map<String, Object> event) {
@@ -379,7 +371,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
             Collections.reverse(reversePluginList);
 
             for (GrailsPlugin plugin : reversePluginList) {
-                if (!plugin.isEnabled(lookupSpringEnvironment().getActiveProfiles())) continue;
+                if (!plugin.isEnabled(applicationContext.getEnvironment().getActiveProfiles())) continue;
                 if (plugin.supportsCurrentScopeAndEnvironment()) {
                     plugin.notifyOfEvent(GrailsPlugin.EVENT_ON_SHUTDOWN, plugin);
                 }
@@ -411,7 +403,7 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
 
         GrailsPlugin plugin = getGrailsPlugin(pluginName);
         if (plugin != null) {
-            if (!plugin.isEnabled(lookupSpringEnvironment().getActiveProfiles())) return;
+            if (!plugin.isEnabled(applicationContext.getEnvironment().getActiveProfiles())) return;
             plugin.notifyOfEvent(GrailsPlugin.EVENT_ON_CHANGE, aClass);
         } else {
             String classNameAsPath = aClass.getName().replace('.', File.separatorChar);

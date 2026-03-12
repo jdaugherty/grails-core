@@ -31,6 +31,7 @@ import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerF
 import org.springframework.context.annotation.Bean
 import spock.lang.Specification
 
+import org.apache.grails.core.plugins.DefaultGrailsPluginDiscovery
 import org.apache.grails.core.plugins.GrailsPluginDiscovery
 
 /**
@@ -47,8 +48,8 @@ class EmbeddedContainerWithGrailsSpec extends Specification {
     void "Test that you can load Grails in an embedded server config"() {
         given: 'bootstrapped context'
         ConfigurableEnvironment env = new StandardServletEnvironment()
-        GrailsPluginDiscovery pluginDiscovery = new GrailsPluginDiscovery()
-        pluginDiscovery.getPlugins(env)
+        GrailsPluginDiscovery pluginDiscovery = new DefaultGrailsPluginDiscovery()
+        pluginDiscovery.init(env)
 
         when: "An embedded server config is created"
         this.context = new AnnotationConfigServletWebServerApplicationContext()

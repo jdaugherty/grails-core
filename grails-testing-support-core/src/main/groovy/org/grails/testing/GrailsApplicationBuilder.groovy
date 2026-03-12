@@ -52,6 +52,7 @@ import grails.core.support.proxy.DefaultProxyHandler
 import grails.plugins.GrailsPluginManager
 import grails.spring.BeanBuilder
 import grails.util.Holders
+import org.apache.grails.core.plugins.DefaultGrailsPluginDiscovery
 import org.apache.grails.core.plugins.filters.IncludingPluginFilter
 import org.apache.grails.core.plugins.GrailsPluginDiscovery
 import org.grails.spring.context.support.GrailsPlaceholderConfigurer
@@ -152,16 +153,17 @@ class GrailsApplicationBuilder {
     }
 
     protected void prepareContext(ConfigurableApplicationContext applicationContext, ConfigurableBeanFactory beanFactory) {
-        def discovery = registerPluginDiscoveryBean(beanFactory)
+        def discovery = registerPluginDiscoveryBean(applicationContext, beanFactory)
         registerGrailsAppPostProcessorBean(beanFactory, discovery)
         AnnotationConfigUtils.registerAnnotationConfigProcessors((BeanDefinitionRegistry) beanFactory)
         new ConfigDataApplicationContextInitializer().initialize(applicationContext)
     }
 
-    protected GrailsPluginDiscovery registerPluginDiscoveryBean(ConfigurableBeanFactory beanFactory) {
-        def discovery = new GrailsPluginDiscovery()
+    protected GrailsPluginDiscovery registerPluginDiscoveryBean(ConfigurableApplicationContext applicationContext, ConfigurableBeanFactory beanFactory) {
+        def discovery = new DefaultGrailsPluginDiscovery()
         // we must load the classpath since the plugin manager needs to find the default plugins
         discovery.pluginFilter = new IncludingPluginFilter(includePlugins ?: DEFAULT_INCLUDED_PLUGINS)
+        discovery.init(applicationContext.getEnvironment())
         beanFactory.registerSingleton(GrailsPluginDiscovery.BEAN_NAME, discovery)
         discovery
     }

@@ -19,9 +19,12 @@
 
 package org.grails.plugins
 
+import org.springframework.core.env.StandardEnvironment
+
 import grails.plugins.GrailsPlugin
 import grails.plugins.GrailsPluginManager
 import grails.web.servlet.plugins.GrailsWebPluginManager
+import org.apache.grails.core.plugins.DefaultGrailsPluginDiscovery
 import org.apache.grails.core.plugins.GrailsPluginDiscovery
 import org.grails.config.PropertySourcesConfig
 import org.grails.spring.aop.autoproxy.GroovyAwareAspectJAwareAdvisorAutoProxyCreator
@@ -136,7 +139,8 @@ class CoreGrailsPluginTests extends AbstractGrailsMockTests {
         springConfig.servletContext = createMockServletContext()
 
         corePlugin.doWithRuntimeConfiguration(springConfig)
-        def discovery = new GrailsPluginDiscovery([corePluginClass] as Class[])
+        def discovery = new DefaultGrailsPluginDiscovery([corePluginClass] as Class[])
+        discovery.init(new StandardEnvironment())
         dataSourcePlugin.manager = new GrailsWebPluginManager(ga, discovery)
         dataSourcePlugin.doWithRuntimeConfiguration(springConfig)
 

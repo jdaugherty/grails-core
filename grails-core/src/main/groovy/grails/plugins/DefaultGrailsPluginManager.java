@@ -109,7 +109,7 @@ public class DefaultGrailsPluginManager extends AbstractGrailsPluginManager {
 
     public Collection<GrailsPlugin> getPluginObservers(GrailsPlugin plugin) {
         Objects.requireNonNull(plugin, "Argument [plugin] cannot be null");
-        GrailsPluginInfo pluginMetadata = this.pluginDiscovery.getPlugin(plugin.getName(), lookupSpringEnvironment());
+        GrailsPluginInfo pluginMetadata = this.pluginDiscovery.getPlugin(plugin.getName());
         return pluginDiscovery.getPluginObservers(pluginMetadata)
                 .stream()
                 .map(GrailsPluginInfo::name)
@@ -124,11 +124,11 @@ public class DefaultGrailsPluginManager extends AbstractGrailsPluginManager {
         if (plugin == null) {
             return;
         }
-        if (!plugin.isEnabled(lookupSpringEnvironment().getActiveProfiles())) return;
+        if (!plugin.isEnabled(applicationContext.getEnvironment().getActiveProfiles())) return;
 
         for (GrailsPlugin observingPlugin : getPluginObservers(plugin)) {
 
-            if (!observingPlugin.isEnabled(lookupSpringEnvironment().getActiveProfiles())) continue;
+            if (!observingPlugin.isEnabled(applicationContext.getEnvironment().getActiveProfiles())) continue;
 
             observingPlugin.notifyOfEvent(event);
         }
@@ -143,7 +143,7 @@ public class DefaultGrailsPluginManager extends AbstractGrailsPluginManager {
         }
 
         // Note: the environment is null here since the plugins should have always been populated in the bootstrap phase
-        pluginDiscovery.getPlugins(null).forEach(pluginInfo -> {
+        pluginDiscovery.getPlugins().forEach(pluginInfo -> {
             GrailsPlugin plugin;
             if (pluginInfo.isDynamic()) {
                 plugin = createGrailsPlugin(pluginInfo.pluginClass(), pluginInfo.pluginDescriptor().resource());

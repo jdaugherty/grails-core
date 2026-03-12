@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.BootstrapRegistry;
 import org.springframework.boot.BootstrapRegistryInitializer;
 
+import org.apache.grails.core.plugins.DefaultGrailsPluginDiscovery;
 import org.apache.grails.core.plugins.GrailsPluginDiscovery;
 
 /**
@@ -47,7 +48,7 @@ public class GrailsBootstrapRegistryInitializer implements BootstrapRegistryInit
     @Override
     public void initialize(BootstrapRegistry registry) {
         LOG.debug("Registering GrailsPluginDiscovery in BootstrapRegistry");
-        registry.register(GrailsPluginDiscovery.class, context -> new GrailsPluginDiscovery());
+        registry.register(GrailsPluginDiscovery.class, context -> new DefaultGrailsPluginDiscovery());
 
         // Promote the GrailsPluginDiscovery singleton to the ApplicationContext
         // so that later-lifecycle components (e.g., DefaultGrailsPluginManager)

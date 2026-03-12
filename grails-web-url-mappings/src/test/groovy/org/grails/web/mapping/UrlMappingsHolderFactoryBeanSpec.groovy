@@ -23,6 +23,7 @@ import grails.core.GrailsApplication
 import grails.plugins.DefaultGrailsPluginManager
 import grails.plugins.GrailsPluginManager
 import grails.web.mapping.UrlMappingsHolder
+import org.apache.grails.core.plugins.DefaultGrailsPluginDiscovery
 import org.apache.grails.core.plugins.GrailsPluginDiscovery
 import org.springframework.context.support.GenericApplicationContext
 import spock.lang.Specification
@@ -38,7 +39,9 @@ class UrlMappingsHolderFactoryBeanSpec extends Specification {
         def context = new GenericApplicationContext()
         context.refresh()
         def app = new DefaultGrailsApplication(ExcludeUrlMappings)
-        def pm = new DefaultGrailsPluginManager(app, new GrailsPluginDiscovery())
+        def discovery = new DefaultGrailsPluginDiscovery()
+        discovery.init(context.getEnvironment())
+        def pm = new DefaultGrailsPluginManager(app, discovery)
         context.beanFactory.registerSingleton(GrailsApplication.APPLICATION_ID, app)
         context.beanFactory.registerSingleton(GrailsPluginManager.BEAN_NAME, pm)
         app.initialise()
