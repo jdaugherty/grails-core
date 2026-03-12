@@ -53,7 +53,7 @@ import org.grails.core.io.CachingPathMatchingResourcePatternResolver;
 import org.grails.io.support.GrailsResourceUtils;
 
 /**
- * This class provides the canonical implementations of Grails Plugin Discovery.
+ * This class is responsible for locating Grails Plugins that should be loaded.
  *
  * @since 7.1
  */
