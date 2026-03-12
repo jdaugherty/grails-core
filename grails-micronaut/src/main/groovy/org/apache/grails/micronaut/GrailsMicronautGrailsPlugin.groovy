@@ -88,7 +88,7 @@ class GrailsMicronautGrailsPlugin extends Plugin {
                                 springPropertySources.get(ymlSourceName) ?: springPropertySources.get(groovySourceName)
                         if (springPs instanceof EnumerablePropertySource) {
                             log.debug('Loading configurations from {} plugin to the parent Micronaut context', pluginName)
-                            micronautEnv.addPropertySource(PropertySource.of("grails.plugins.${pluginName}", (Map) springPs.getSource(), --priority))
+                            micronautEnv.addPropertySource(PropertySource.of("grails.plugins.${pluginName}", (Map) springPs.source, --priority))
                         }
                     }
         }
