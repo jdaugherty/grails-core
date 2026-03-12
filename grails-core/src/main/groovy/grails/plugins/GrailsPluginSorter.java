@@ -31,9 +31,9 @@ import java.util.function.Function;
  * and {@code loadBefore} declarations.
  *
  * <p>This class provides the single shared implementation of plugin ordering that
- * is used by both {@link DefaultGrailsPluginManager} (at runtime, operating on
- * {@link GrailsPlugin} instances) and
- * {@link GrailsEnvironmentPostProcessor} (early in the
+ * is used by both {@link grails.plugins.DefaultGrailsPluginManager} (at runtime, operating on
+ * {@link grails.plugins.GrailsPlugin} instances) and
+ * {@link grails.boot.config.GrailsEnvironmentPostProcessor} (early in the
  * lifecycle, operating on lightweight {@code PluginInfo} records before the
  * ApplicationContext is available).</p>
  *
@@ -48,13 +48,13 @@ import java.util.function.Function;
  * </ol>
  *
  * <p><strong>Note:</strong> {@code dependsOn} is intentionally <em>not</em> used
- * for ordering. In the original {@link DefaultGrailsPluginManager}, {@code dependsOn}
+ * for ordering. In the original {@link grails.plugins.DefaultGrailsPluginManager}, {@code dependsOn}
  * is only used for dependency <em>resolution</em> (checking that required plugins
  * are present), not for determining load order. Load order is controlled exclusively
  * by {@code loadAfter} and {@code loadBefore}.</p>
  *
  * <p>The sort is generic: callers provide accessor functions so the same algorithm
- * works with any plugin representation (full {@link GrailsPlugin} objects, lightweight
+ * works with any plugin representation (full {@link grails.plugins.GrailsPlugin} objects, lightweight
  * metadata records, etc.).</p>
  *
  * @since 7.1
@@ -145,7 +145,7 @@ public final class GrailsPluginSorter {
      * <p>{@code dependsOn} is intentionally not included here. It is used for
      * dependency resolution (ensuring required plugins are present) but does not
      * affect load ordering. This matches the original behavior in
-     * {@link DefaultGrailsPluginManager}.</p>
+     * {@link grails.plugins.DefaultGrailsPluginManager}.</p>
      */
     private static <T> Map<T, List<T>> resolveLoadDependencies(
             List<T> plugins,

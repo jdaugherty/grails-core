@@ -31,7 +31,7 @@ import org.apache.grails.core.plugins.GrailsPluginDiscovery;
  * the early lifecycle of the application & later promoted to actual bean.
  *
  * <p>This ensures that both the early-lifecycle
- * {@link GrailsEnvironmentPostProcessor} and the
+ * {@link grails.boot.config.GrailsEnvironmentPostProcessor} and the
  * later-lifecycle {@link grails.plugins.DefaultGrailsPluginManager} can
  * access the same discovered, filtered, and sorted set of plugins.</p>
  *

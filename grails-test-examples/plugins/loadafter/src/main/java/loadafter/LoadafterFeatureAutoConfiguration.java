@@ -25,7 +25,7 @@ import org.springframework.context.annotation.Bean;
 /**
  * Auto-configuration for the loadafter plugin that is conditional on a property
  * defined in the plugin's {@code plugin.yml}. This verifies that
- * {@code GrailsEnvironmentPostProcessor} loads plugin configuration early
+ * {@code grails.boot.config.GrailsEnvironmentPostProcessor} loads plugin configuration early
  * enough for {@code @ConditionalOnProperty} to evaluate correctly.
  *
  * @since 7.0

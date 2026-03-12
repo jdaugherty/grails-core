@@ -50,7 +50,7 @@ abstract class Plugin implements GrailsApplicationLifeCycle, GrailsApplicationAw
      */
     GrailsApplication grailsApplication
     /**
-     * The {@link GrailsPlugin} definition for this plugin
+     * The {@link grails.plugins.GrailsPlugin} definition for this plugin
      */
     GrailsPlugin plugin
     /**

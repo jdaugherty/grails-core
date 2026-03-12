@@ -132,7 +132,7 @@ class GrailsApplicationPostProcessor implements BeanDefinitionRegistryPostProces
      * that backs {@code grailsApplication.config}.
      *
      * <p>Plugin configurations are loaded early by
-     * {@link GrailsEnvironmentPostProcessor} and are already
+     * {@link grails.boot.config.GrailsEnvironmentPostProcessor} and are already
      * present in the environment's property sources by the time this method runs.
      * This method simply creates the {@link PropertySourcesConfig} from whatever
      * property sources exist in the environment.</p>
