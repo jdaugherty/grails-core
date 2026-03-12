@@ -81,11 +81,10 @@ class GrailsMicronautGrailsPlugin extends Plugin {
                     .each { plugin ->
                         // Look up the plugin's property source from the Spring environment,
                         // where it was loaded by GrailsEnvironmentPostProcessor
-                        String pluginName = plugin.name
-                        String ymlSourceName = pluginName + PLUGIN_YML_SUFFIX
-                        String groovySourceName = pluginName + PLUGIN_GROOVY_SUFFIX
-                        org.springframework.core.env.PropertySource<?> springPs =
-                                springPropertySources.get(ymlSourceName) ?: springPropertySources.get(groovySourceName)
+                        def pluginName = plugin.name
+                        def ymlSourceName = pluginName + PLUGIN_YML_SUFFIX
+                        def groovySourceName = pluginName + PLUGIN_GROOVY_SUFFIX
+                        def springPs = springPropertySources.get(ymlSourceName) ?: springPropertySources.get(groovySourceName)
                         if (springPs instanceof EnumerablePropertySource) {
                             log.debug('Loading configurations from {} plugin to the parent Micronaut context', pluginName)
                             micronautEnv.addPropertySource(PropertySource.of("grails.plugins.${pluginName}", (Map) springPs.source, --priority))

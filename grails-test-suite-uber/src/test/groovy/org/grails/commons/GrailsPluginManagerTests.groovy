@@ -123,7 +123,7 @@ hibernate {
     }
 
     void testLoadPlugins() {
-        GrailsPluginManager manager = new DefaultGrailsPluginManager(ga, new GrailsPluginDiscovery())
+        def manager = new DefaultGrailsPluginManager(ga, new GrailsPluginDiscovery())
         manager.loadPlugins()
 
         GrailsPlugin plugin = manager.getGrailsPlugin("classEditor")

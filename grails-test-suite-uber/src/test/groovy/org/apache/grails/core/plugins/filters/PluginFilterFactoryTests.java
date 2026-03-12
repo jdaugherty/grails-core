@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class PluginFilterFactoryTests {
 
     MockEnvironment createEnvironment(String includes, String excludes) {
-        MockEnvironment env = new MockEnvironment();
+        var env = new MockEnvironment();
         if(includes != null) {
             env.setProperty(Settings.PLUGIN_INCLUDES, includes);
         }
@@ -45,44 +45,44 @@ public class PluginFilterFactoryTests {
 
     @Test
     public void testIncludeFilterOne() {
-        PluginFilterRetriever fb = new PluginFilterRetriever();
-        PluginFilter bean = fb.getPluginFilter(createEnvironment("one", null));
+        var fb = new PluginFilterRetriever();
+        var bean = fb.getPluginFilter(createEnvironment("one", null));
         assertInstanceOf(IncludingPluginFilter.class, bean);
 
-        IncludingPluginFilter filter = (IncludingPluginFilter)bean;
-        Set<String> suppliedNames = filter.getSuppliedNames();
+        var filter = (IncludingPluginFilter)bean;
+        var suppliedNames = filter.getSuppliedNames();
         assertEquals(1, suppliedNames.size());
         assertTrue(suppliedNames.contains("one"));
     }
 
     @Test
     public void testIncludeFilter() {
-        PluginFilterRetriever fb = new PluginFilterRetriever();
-        PluginFilter bean = fb.getPluginFilter(createEnvironment("one, two", " three , four "));
+        var fb = new PluginFilterRetriever();
+        var bean = fb.getPluginFilter(createEnvironment("one, two", " three , four "));
         assertInstanceOf(IncludingPluginFilter.class, bean);
 
-        IncludingPluginFilter filter = (IncludingPluginFilter)bean;
-        Set<String> suppliedNames = filter.getSuppliedNames();
+        var filter = (IncludingPluginFilter)bean;
+        var suppliedNames = filter.getSuppliedNames();
         assertEquals(2, suppliedNames.size());
         assertTrue(suppliedNames.contains("two"));
     }
 
     @Test
     public void testExcludeFilter() {
-        PluginFilterRetriever fb = new PluginFilterRetriever();
-        PluginFilter bean = fb.getPluginFilter(createEnvironment(null, " three , four "));
+        var fb = new PluginFilterRetriever();
+        var bean = fb.getPluginFilter(createEnvironment(null, " three , four "));
         assertInstanceOf(ExcludingPluginFilter.class, bean);
 
-        ExcludingPluginFilter filter = (ExcludingPluginFilter)bean;
-        Set<String> suppliedNames = filter.getSuppliedNames();
+        var filter = (ExcludingPluginFilter)bean;
+        var suppliedNames = filter.getSuppliedNames();
         assertEquals(2, suppliedNames.size());
         assertTrue(suppliedNames.contains("four"));
     }
 
     @Test
     public void testDefaultFilter() {
-        PluginFilterRetriever fb = new PluginFilterRetriever();
-        PluginFilter bean = fb.getPluginFilter(createEnvironment(null, null));
+        var fb = new PluginFilterRetriever();
+        var bean = fb.getPluginFilter(createEnvironment(null, null));
         assertInstanceOf(NoOpPluginFilter.class, bean);
     }
 }
