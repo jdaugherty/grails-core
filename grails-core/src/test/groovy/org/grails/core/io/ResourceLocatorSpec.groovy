@@ -18,7 +18,6 @@
  */
 package org.grails.core.io
 
-
 import grails.core.DefaultGrailsApplication
 import grails.plugins.GrailsPlugin
 import grails.plugins.GrailsPluginManager
