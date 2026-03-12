@@ -81,7 +81,7 @@ public class GrailsEnvironmentPostProcessor implements EnvironmentPostProcessor,
             Collection<GrailsPluginInfo> plugins = pluginDiscovery.getLoadOrderedPlugins(environment);
             loadPluginConfigurations(plugins, environment);
         } catch (Exception e) {
-            LOG.warn("Error loading Grails plugin configurations early: {}. " +
+            LOG.error("Error loading Grails plugin configurations early: {}. " +
                             "Plugin configurations may not be available for @ConditionalOnProperty evaluation.",
                     e.getMessage());
             if (LOG.isDebugEnabled()) {
