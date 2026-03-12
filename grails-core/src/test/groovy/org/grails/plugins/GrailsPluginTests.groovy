@@ -168,8 +168,8 @@ class TestGrailsPlugin {
         
         // Create and set up application context
         def appCtx = new GenericApplicationContext()
-        application.setMainContext(appCtx)
-        
+        application.mainContext = appCtx
+
         // Create discovery bean configured for unit tests
         GrailsPluginDiscovery discovery = new GrailsPluginDiscovery(new Class<?>[]{test1})
 
@@ -182,16 +182,16 @@ class TestGrailsPlugin {
 
         String originalEnv = System.getProperty(Environment.KEY)
         try {
-            System.setProperty(Environment.KEY, Environment.PRODUCTION.getName())
+            System.setProperty(Environment.KEY, Environment.PRODUCTION.name)
 
             // Create new application and context for production environment test
             application = new DefaultGrailsApplication()
             appCtx = new GenericApplicationContext()
-            application.setMainContext(appCtx)
-            
+            application.mainContext = appCtx
+
             // Create new discovery bean for production environment test
             discovery = new GrailsPluginDiscovery(new Class<?>[]{test1})
-            discovery.setLoadClasspathPlugins(false)
+            discovery.loadClasspathPlugins = false
             discovery.getPlugins(new StandardEnvironment())
             
             pluginManager = new DefaultGrailsPluginManager(application, discovery)

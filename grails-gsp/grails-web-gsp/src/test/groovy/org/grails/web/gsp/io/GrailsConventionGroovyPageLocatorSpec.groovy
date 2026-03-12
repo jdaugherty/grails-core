@@ -51,7 +51,7 @@ class GrailsConventionGroovyPageLocatorSpec extends Specification {
         then: "The view is found"
         (pageSource instanceof GroovyPageCompiledScriptSource)
         pageSource != null
-        !pageSource.isPublic()
+        !pageSource.public
     }
 
     void "Test find template with controller instance and view name"() {
@@ -69,7 +69,7 @@ class GrailsConventionGroovyPageLocatorSpec extends Specification {
         source != null
         source.URI == '/test/_bar.gsp'
         source instanceof GroovyPageResourceScriptSource
-        !source.isPublic()
+        !source.public
 
         when: "A non-existent template is queried"
         source = pageLocator.findTemplate(new TestController(), "notThere")
@@ -168,7 +168,7 @@ class GrailsConventionGroovyPageLocatorSpec extends Specification {
         then: "the script source is found"
         source != null
         source.URI == '/foo/bar.gsp'
-        !source.isPublic()
+        !source.public
 
         when: "A non-existent view is queried"
         source = pageLocator.findViewByPath("/not/there")
@@ -185,7 +185,7 @@ class GrailsConventionGroovyPageLocatorSpec extends Specification {
         then: "the script source is found"
         source != null
         source.URI == '/foo/bar.gsp'
-        source.isPublic()
+        source.public
 
         when: "A non-existent view is queried"
         source = pageLocator.findViewByPath("/not/there")
@@ -251,8 +251,8 @@ class GrailsConventionGroovyPageLocatorSpec extends Specification {
         binaryPlugin.@precompiledViewMap["/WEB-INF/grails-app/views/test/binaryView.gsp"] = new GroovyClassLoader().parseClass(sw.toString())
 
         def discovery = new MockGrailsPluginDiscovery([CoreGrailsPlugin] as Class[])
-        discovery.setLoadClasspathPlugins(false)
-        discovery.setPluginFilter (new NoOpPluginFilter())
+        discovery.loadClasspathPlugins = false
+        discovery.pluginFilter = new NoOpPluginFilter()
         discovery.getPlugins(null)
 
         def pluginManager = new MockGrailsPluginManager(new DefaultGrailsApplication(), discovery)
