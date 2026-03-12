@@ -18,6 +18,8 @@
  */
 package org.grails.core.io
 
+import org.springframework.context.support.GenericApplicationContext
+
 import grails.core.DefaultGrailsApplication
 import grails.plugins.GrailsPlugin
 import grails.plugins.GrailsPluginManager
@@ -33,64 +35,64 @@ class ResourceLocatorSpec extends Specification {
 
     void "test find simple URI"() {
         given: "Resource locator with mock resource loader"
-            def loader = new MockStringResourceLoader()
-            loader.registerMockResource("file:./web-app/css/main.css", "dummy contents")
-            def resourceLocator = new MockResourceLocator(defaultResourceLoader: loader)
-            resourceLocator.searchLocation = "./"
+        def loader = new MockStringResourceLoader()
+        loader.registerMockResource("file:./web-app/css/main.css", "dummy contents")
+        def resourceLocator = new MockResourceLocator(defaultResourceLoader: loader)
+        resourceLocator.searchLocation = "./"
 
         when: "An existing resource is queried"
-            def res = resourceLocator.findResourceForURI("/css/main.css")
+        def res = resourceLocator.findResourceForURI("/css/main.css")
 
         then: "Make sure it is found"
-            assert res != null
+        assert res != null
 
         when: "A non-existent resource is queried"
-            res = resourceLocator.findResourceForURI("/css/notThere.css")
+        res = resourceLocator.findResourceForURI("/css/notThere.css")
 
         then: "null is returned"
-            res == null
+        res == null
     }
 
     void "test find resource from binary plugin"() {
         given: "Resource locator with mock resource loader and a plugin manager"
-             def loader = new MockStringResourceLoader()
-             def resourceLocator = new MockResourceLocator(defaultResourceLoader: loader)
-             def binaryPlugin = getBinaryPlugin()
-             
-             // Create a mock plugin manager that returns our registered binary plugin
-             def manager = Mock(GrailsPluginManager)
-             manager.getAllPlugins() >> ([binaryPlugin] as GrailsPlugin[])
-             resourceLocator.pluginManager = manager
+        def loader = new MockStringResourceLoader()
+        def resourceLocator = new MockResourceLocator(defaultResourceLoader: loader)
+        def binaryPlugin = binaryPlugin
+
+        // Create a mock plugin manager that returns our registered binary plugin
+        def manager = Mock(GrailsPluginManager)
+        manager.allPlugins >> ([binaryPlugin] as GrailsPlugin[])
+        resourceLocator.pluginManager = manager
 
         when: "A binary plugin resource is queried"
-            def res = resourceLocator.findResourceForURI("/plugins/test-binary-1.0/css/main.css")
+        def res = resourceLocator.findResourceForURI("/plugins/test-binary-1.0/css/main.css")
 
         then: "The resource is found"
-            assert res != null
+        assert res != null
     }
 
     BinaryGrailsPlugin getBinaryPlugin() {
-            def str = '''
+        def str = '''
     <plugin name='testBinary'>
       <class>org.grails.plugins.TestBinaryGrailsPlugin</class>
     </plugin>
     '''
 
-            def xml = new XmlSlurper().parseText(str)
+        new XmlSlurper().parseText(str)
 
-            def resource = new MockBinaryPluginResource(str.bytes)
-            def descriptor = new GrailsPluginDescriptor(resource, ['org.grails.plugins.TestBinaryGrailsPlugin'], [])
-            resource.relativesResources['static/css/main.css'] = new ByteArrayResource(''.bytes)
-            
-            def grailsApp = new DefaultGrailsApplication()
-            def appCtx = new org.springframework.context.support.GenericApplicationContext()
-            grailsApp.setMainContext(appCtx)
-            
-            def binaryPlugin = new BinaryGrailsPlugin(TestBinaryGrailsPlugin, descriptor, grailsApp)
-            return binaryPlugin
+        def resource = new MockBinaryPluginResource(str.bytes)
+        def descriptor = new GrailsPluginDescriptor(resource, ['org.grails.plugins.TestBinaryGrailsPlugin'], [])
+        resource.relativesResources['static/css/main.css'] = new ByteArrayResource(''.bytes)
+
+        def grailsApp = new DefaultGrailsApplication()
+        grailsApp.mainContext = new GenericApplicationContext()
+
+        def binaryPlugin = new BinaryGrailsPlugin(TestBinaryGrailsPlugin, descriptor, grailsApp)
+        return binaryPlugin
     }
 }
 
 class MockResourceLocator extends DefaultResourceLocator {
+
     ResourceLoader defaultResourceLoader
 }
