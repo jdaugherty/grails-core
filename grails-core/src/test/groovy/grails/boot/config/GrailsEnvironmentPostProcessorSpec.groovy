@@ -112,8 +112,11 @@ class GrailsEnvironmentPostProcessorSpec extends Specification {
         noExceptionThrown()
     }
 
-    def "postProcessEnvironment handles IOException from groovy configuration gracefully"() {
-        given:
+    def "postProcessEnvironment handles groovy configuration failure gracefully"() {
+        given: "a plugin with a groovy config resource that fails to load"
+        // GroovyConfigPropertySourceLoader wraps all failures in GrailsConfigurationException
+        // (a RuntimeException), which escapes the per-plugin catch(IOException) and is caught
+        // by the outer catch(Exception) in postProcessEnvironment
         def groovyResource = Mock(Resource)
         groovyResource.exists() >> true
         groovyResource.getFilename() >> 'plugin.groovy'
@@ -137,8 +140,12 @@ class GrailsEnvironmentPostProcessorSpec extends Specification {
         noExceptionThrown()
     }
 
-    def "postProcessEnvironment handles both yml and groovy configuration failures gracefully"() {
-        given:
+    def "postProcessEnvironment handles yml IOException then groovy RuntimeException gracefully"() {
+        given: "two plugins where yml fails with IOException and groovy fails with GrailsConfigurationException"
+        // loadPluginConfigurations iterates in reverse order, so [groovyPlugin, ymlPlugin]
+        // becomes [ymlPlugin, groovyPlugin] after reversal. The yml IOException is caught
+        // per-plugin and processing continues. The groovy GrailsConfigurationException (RuntimeException)
+        // escapes the inner catch(IOException) and is caught by the outer catch(Exception).
         def ymlResource = Mock(Resource)
         ymlResource.exists() >> true
         ymlResource.getFilename() >> 'plugin.yml'
@@ -149,13 +156,16 @@ class GrailsEnvironmentPostProcessorSpec extends Specification {
         groovyResource.getFilename() >> 'plugin.groovy'
         groovyResource.getURL() >> { throw new IOException('Simulated groovy read failure') }
 
+        // Order matters: reversed iteration processes groovyPlugin first, then ymlPlugin.
+        // Passing [groovyPlugin, ymlPlugin] means the reversed list is [ymlPlugin, groovyPlugin].
+        // yml is processed first (IOException caught per-plugin), then groovy fails (caught by outer handler).
         def ymlPlugin = createPluginInfo('ymlPlugin', ymlResource)
         def groovyPlugin = createPluginInfo('groovyPlugin', groovyResource)
 
         def bootstrapContext = Mock(ConfigurableBootstrapContext)
         def discovery = Mock(GrailsPluginDiscovery)
         bootstrapContext.get(GrailsPluginDiscovery.class) >> discovery
-        discovery.getLoadOrderedPlugins(_) >> [ymlPlugin, groovyPlugin]
+        discovery.getLoadOrderedPlugins(_) >> [groovyPlugin, ymlPlugin]
 
         def processor = new GrailsEnvironmentPostProcessor(bootstrapContext)
         def environment = new StandardEnvironment()
@@ -169,7 +179,10 @@ class GrailsEnvironmentPostProcessorSpec extends Specification {
     }
 
     def "postProcessEnvironment does not add property sources when both yml and groovy configurations fail"() {
-        given:
+        given: "two plugins where both configurations fail to load"
+        // The reversed iteration processes ymlPlugin first (IOException caught per-plugin),
+        // then groovyPlugin (GrailsConfigurationException caught by outer handler).
+        // Neither should add property sources.
         def ymlResource = Mock(Resource)
         ymlResource.exists() >> true
         ymlResource.getFilename() >> 'plugin.yml'
@@ -186,7 +199,8 @@ class GrailsEnvironmentPostProcessorSpec extends Specification {
         def bootstrapContext = Mock(ConfigurableBootstrapContext)
         def discovery = Mock(GrailsPluginDiscovery)
         bootstrapContext.get(GrailsPluginDiscovery.class) >> discovery
-        discovery.getLoadOrderedPlugins(_) >> [ymlPlugin, groovyPlugin]
+        // [groovyPlugin, ymlPlugin] reversed = [ymlPlugin, groovyPlugin]
+        discovery.getLoadOrderedPlugins(_) >> [groovyPlugin, ymlPlugin]
 
         def processor = new GrailsEnvironmentPostProcessor(bootstrapContext)
         def environment = new StandardEnvironment()
@@ -199,6 +213,43 @@ class GrailsEnvironmentPostProcessorSpec extends Specification {
         then:
         noExceptionThrown()
         environment.propertySources.size() == initialSourceCount
+    }
+
+    def "postProcessEnvironment groovy failure aborts remaining plugin config loading"() {
+        given: "groovy plugin is processed first and its RuntimeException aborts the loop"
+        // When [ymlPlugin, groovyPlugin] is passed, the reversed list is [groovyPlugin, ymlPlugin].
+        // The groovy GrailsConfigurationException (RuntimeException) escapes the inner
+        // catch(IOException), so the yml plugin is never reached. The outer catch(Exception)
+        // handles it gracefully.
+        def ymlResource = Mock(Resource)
+        ymlResource.exists() >> true
+        ymlResource.getFilename() >> 'plugin.yml'
+        ymlResource.getInputStream() >> { throw new IOException('Simulated yml read failure') }
+
+        def groovyResource = Mock(Resource)
+        groovyResource.exists() >> true
+        groovyResource.getFilename() >> 'plugin.groovy'
+        groovyResource.getURL() >> { throw new IOException('Simulated groovy read failure') }
+
+        def ymlPlugin = createPluginInfo('ymlPlugin', ymlResource)
+        def groovyPlugin = createPluginInfo('groovyPlugin', groovyResource)
+
+        def bootstrapContext = Mock(ConfigurableBootstrapContext)
+        def discovery = Mock(GrailsPluginDiscovery)
+        bootstrapContext.get(GrailsPluginDiscovery.class) >> discovery
+        // [ymlPlugin, groovyPlugin] reversed = [groovyPlugin, ymlPlugin]
+        // groovy is processed first, fails with RuntimeException, yml is never reached
+        discovery.getLoadOrderedPlugins(_) >> [ymlPlugin, groovyPlugin]
+
+        def processor = new GrailsEnvironmentPostProcessor(bootstrapContext)
+        def environment = new StandardEnvironment()
+        def application = Mock(SpringApplication)
+
+        when:
+        processor.postProcessEnvironment(environment, application)
+
+        then:
+        noExceptionThrown()
     }
 
     private static GrailsPluginInfo createPluginInfo(String name, Resource configResource) {
