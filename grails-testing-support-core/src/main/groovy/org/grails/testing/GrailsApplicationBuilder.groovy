@@ -104,7 +104,7 @@ class GrailsApplicationBuilder {
 
         grailsApplication = mainContext.getBean('grailsApplication') as GrailsApplication
 
-        if (!grailsApplication.isInitialised()) {
+        if (!grailsApplication.initialised) {
             grailsApplication.initialise()
         }
 
@@ -117,7 +117,7 @@ class GrailsApplicationBuilder {
 
         if (isServletApiPresent) {
             context = ClassUtils.forName('org.springframework.mock.web.MockServletContext').getDeclaredConstructor().newInstance()
-            Holders.setServletContext(context)
+            Holders.servletContext = context
         }
 
         return context
@@ -127,7 +127,7 @@ class GrailsApplicationBuilder {
         ConfigurableApplicationContext context
         if (isServletApiPresent && servletContext != null) {
             context = (AnnotationConfigServletWebApplicationContext) ClassUtils.forName('org.springframework.boot.web.servlet.context.AnnotationConfigServletWebApplicationContext').getDeclaredConstructor().newInstance()
-            ((AnnotationConfigServletWebApplicationContext) context).setServletContext((ServletContext) servletContext)
+            ((AnnotationConfigServletWebApplicationContext) context).servletContext = (ServletContext) servletContext
         } else {
             context = (ConfigurableApplicationContext) ClassUtils.forName('org.springframework.context.annotation.AnnotationConfigApplicationContext').getDeclaredConstructor().newInstance()
         }
@@ -140,10 +140,10 @@ class GrailsApplicationBuilder {
             ((AnnotationConfigRegistry) context).register(ClassUtils.forName(it, classLoader))
         }
 
-        def beanFactory = context.getBeanFactory()
+        def beanFactory = context.beanFactory
         (beanFactory as DefaultListableBeanFactory).with {
-            setAllowBeanDefinitionOverriding(true)
-            setAllowCircularReferences(true)
+            allowBeanDefinitionOverriding = true
+            allowCircularReferences = true
         }
         prepareContext(context, beanFactory)
         context.refresh()
@@ -159,9 +159,9 @@ class GrailsApplicationBuilder {
     }
 
     protected GrailsPluginDiscovery registerPluginDiscoveryBean(ConfigurableBeanFactory beanFactory) {
-        GrailsPluginDiscovery discovery = new GrailsPluginDiscovery()
+        def discovery = new GrailsPluginDiscovery()
         // we must load the classpath since the plugin manager needs to find the default plugins
-        discovery.setPluginFilter(new IncludingPluginFilter(includePlugins ?: DEFAULT_INCLUDED_PLUGINS))
+        discovery.pluginFilter = new IncludingPluginFilter(includePlugins ?: DEFAULT_INCLUDED_PLUGINS)
         beanFactory.registerSingleton(GrailsPluginDiscovery.BEAN_NAME, discovery)
         discovery
     }
@@ -177,11 +177,11 @@ class GrailsApplicationBuilder {
 
     void defineBeans(GrailsApplication grailsApplication, Closure callable) {
         def binding = new Binding()
-        def bb = new BeanBuilder(null, null, grailsApplication.getClassLoader())
+        def bb = new BeanBuilder(null, null, grailsApplication.classLoader)
         binding.setVariable('application', grailsApplication)
-        bb.setBinding(binding)
+        bb.binding = binding
         bb.beans(callable)
-        bb.registerBeans((BeanDefinitionRegistry) grailsApplication.getMainContext())
+        bb.registerBeans((BeanDefinitionRegistry) grailsApplication.mainContext)
     }
 
     @CompileDynamic
@@ -235,7 +235,7 @@ class GrailsApplicationBuilder {
         values.add('customizeGrailsApplicationClosure', customizeGrailsApplicationClosure)
 
         def beanDef = new RootBeanDefinition(TestRuntimeGrailsApplicationPostProcessor, constructorArgumentValues, values)
-        beanDef.setRole(BeanDefinition.ROLE_INFRASTRUCTURE)
+        beanDef.role = BeanDefinition.ROLE_INFRASTRUCTURE
         (beanFactory as BeanDefinitionRegistry).registerBeanDefinition('grailsApplicationPostProcessor', beanDef)
     }
 
@@ -260,7 +260,7 @@ class GrailsApplicationBuilder {
             super.postProcessBeanDefinitionRegistry(registry)
             PropertySourcesPlaceholderConfigurer propertySourcePlaceholderConfigurer  = (PropertySourcesPlaceholderConfigurer) grailsApplication.mainContext.getBean('grailsPlaceholderConfigurer')
             propertySourcePlaceholderConfigurer.order = Ordered.HIGHEST_PRECEDENCE
-            propertySourcePlaceholderConfigurer.setLocalOverride(localOverride)
+            propertySourcePlaceholderConfigurer.localOverride = localOverride
         }
     }
 }
