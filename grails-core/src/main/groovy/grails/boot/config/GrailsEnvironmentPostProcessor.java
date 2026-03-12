@@ -160,7 +160,7 @@ public class GrailsEnvironmentPostProcessor implements EnvironmentPostProcessor,
         }
 
         if (loadedCount > 0) {
-            LOG.info("Loaded {} plugin configuration(s) early via GrailsPluginEnvironmentPostProcessor", loadedCount);
+            LOG.info("Loaded {} plugin configuration(s) early via GrailsEnvironmentPostProcessor", loadedCount);
         }
     }
 
