@@ -77,7 +77,7 @@ class BinaryPluginSpec extends Specification {
         def binaryPlugin = new BinaryGrailsPlugin(TestBinaryGrailsPlugin, descriptor, new DefaultGrailsApplication())
 
         then:
-        binaryPlugin.getPropertySource() == null
+        binaryPlugin.propertySource == null
     }
 
     def "Test getPropertySource looks up plugin.yml from environment"() {
@@ -91,11 +91,11 @@ class BinaryPluginSpec extends Specification {
         appCtx.environment.propertySources.addLast(ymlPropertySource)
 
         when:
-        grailsApp.setMainContext(appCtx)
+        grailsApp.mainContext = appCtx
 
         then:
-        binaryPlugin.getPropertySource() != null
-        binaryPlugin.getPropertySource().getProperty('foo') == 'bar'
+        binaryPlugin.propertySource != null
+        binaryPlugin.propertySource.getProperty('foo') == 'bar'
     }
 
     def "Test getPropertySource looks up plugin.groovy from environment"() {
@@ -109,11 +109,11 @@ class BinaryPluginSpec extends Specification {
         appCtx.environment.propertySources.addLast(groovyPropertySource)
 
         when:
-        grailsApp.setMainContext(appCtx)
+        grailsApp.mainContext = appCtx
 
         then:
-        binaryPlugin.getPropertySource() != null
-        binaryPlugin.getPropertySource().getProperty('bar') == 'foo'
+        binaryPlugin.propertySource != null
+        binaryPlugin.propertySource.getProperty('bar') == 'foo'
     }
 
     def "Test mutual exclusion of plugin.yml and plugin.groovy is enforced by EPP"() {
