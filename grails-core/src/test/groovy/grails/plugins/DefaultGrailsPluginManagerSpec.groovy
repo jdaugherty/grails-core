@@ -29,11 +29,11 @@ class DefaultGrailsPluginManagerSpec extends Specification {
 
     def "plugin manager can be created with application and discovery bean"() {
         given:
-        GrailsApplication app = Mock(GrailsApplication)
-        GrailsPluginDiscovery discovery = Mock(GrailsPluginDiscovery)
+        def app = Mock(GrailsApplication)
+        def discovery = Mock(GrailsPluginDiscovery)
 
         when:
-        DefaultGrailsPluginManager manager = new DefaultGrailsPluginManager(app, discovery)
+        def manager = new DefaultGrailsPluginManager(app, discovery)
 
         then:
         manager != null
@@ -41,18 +41,13 @@ class DefaultGrailsPluginManagerSpec extends Specification {
 
     def "plugin manager can be created with just application"() {
         given:
-        GrailsApplication app = Mock(GrailsApplication)
-        GrailsPluginDiscovery discovery = Mock(GrailsPluginDiscovery)
+        def app = Mock(GrailsApplication)
+        def discovery = Mock(GrailsPluginDiscovery)
 
         when:
-        DefaultGrailsPluginManager manager = new DefaultGrailsPluginManager(app, discovery)
+        def manager = new DefaultGrailsPluginManager(app, discovery)
 
         then:
         manager != null
     }
-
-    // NOTE: The following methods tested in previous versions no longer exist:
-    // - getPluginGrailsVersion(GrailsPlugin) - removed as internal implementation detail
-    // - isCompatiblePlugin(GrailsPlugin) - removed as internal implementation detail
-    // Plugin version compatibility is now handled through GrailsPluginDiscovery and GrailsPluginInfo
 }

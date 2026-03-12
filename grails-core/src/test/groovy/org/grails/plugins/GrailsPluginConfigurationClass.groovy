@@ -32,7 +32,7 @@ class GrailsPluginConfigurationClass extends GrailsAutoConfiguration {
 
     @Bean(name = "grailsPluginManager")
     GrailsPluginManager getGrailsPluginManager() {
-        MockGrailsPluginManager pluginManager = new MockGrailsPluginManager()
+        def pluginManager = new MockGrailsPluginManager()
         createGrailsPlugins(pluginManager.application).each {
             pluginManager.registerMockPlugin(it)
         }
@@ -43,18 +43,18 @@ class GrailsPluginConfigurationClass extends GrailsAutoConfiguration {
         final String grailsVersion = '4.0.1'
         def gcl = new GroovyClassLoader()
 
-        GrailsPlugin plugin = new DefaultGrailsPlugin(gcl.parseClass("""class TestGrailsPlugin {
+        def plugin = new DefaultGrailsPlugin(gcl.parseClass("""class TestGrailsPlugin {
         def version = '1.0.0'
         def grailsVersion = '$grailsVersion'
         def loadAfter = ['testTwo']
 }"""), grailsApplication)
 
-        GrailsPlugin plugin2 = new DefaultGrailsPlugin(gcl.parseClass("""class TestTwoGrailsPlugin {
+        def plugin2 = new DefaultGrailsPlugin(gcl.parseClass("""class TestTwoGrailsPlugin {
         def version = '1.0.0'
         def grailsVersion = '$grailsVersion'
 }"""), grailsApplication)
 
-        List<GrailsPlugin>.of(plugin, plugin2)
+        [plugin, plugin2] as List<GrailsPlugin>
     }
 
 }
