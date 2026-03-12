@@ -162,7 +162,7 @@ class GrailsApplicationBuilder {
         GrailsPluginDiscovery discovery = new GrailsPluginDiscovery()
         // we must load the classpath since the plugin manager needs to find the default plugins
         discovery.setPluginFilter(new IncludingPluginFilter(includePlugins ?: DEFAULT_INCLUDED_PLUGINS))
-        (beanFactory as DefaultListableBeanFactory).registerSingleton(GrailsPluginDiscovery.BEAN_NAME, discovery)
+        beanFactory.registerSingleton(GrailsPluginDiscovery.BEAN_NAME, discovery)
         discovery
     }
 
