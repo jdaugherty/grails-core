@@ -42,7 +42,7 @@ class InspectConfigController {
     /**
      * Shows the status of conditional beans from plugins whose
      * {@code @ConditionalOnProperty} evaluates against {@code plugin.yml} properties.
-     * This proves that the {@code GrailsPluginEnvironmentPostProcessor} loads
+     * This proves that the {@code GrailsEnvironmentPostProcessor} loads
      * plugin configuration early enough for auto-configuration conditions.
      */
     def showConditionalBeans() {

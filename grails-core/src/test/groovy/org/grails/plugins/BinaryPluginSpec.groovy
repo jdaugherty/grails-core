@@ -117,7 +117,7 @@ class BinaryPluginSpec extends Specification {
     }
 
     def "Test mutual exclusion of plugin.yml and plugin.groovy is enforced by EPP"() {
-        expect: "Constructor no longer throws when both config files exist - validation moved to GrailsPluginEnvironmentPostProcessor"
+        expect: "Constructor no longer throws when both config files exist - validation moved to GrailsEnvironmentPostProcessor"
         def descriptor = new GrailsPluginDescriptor(new ByteArrayResource(testBinary.getBytes('UTF-8')), ['org.grails.plugins.TestBinaryResource'], [])
         new BinaryGrailsPlugin(TestBinaryGrailsPlugin, descriptor, new DefaultGrailsApplication()) != null
     }

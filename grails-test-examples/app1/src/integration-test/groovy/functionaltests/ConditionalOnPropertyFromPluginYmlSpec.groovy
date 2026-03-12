@@ -26,7 +26,7 @@ import grails.testing.mixin.integration.Integration
  * Integration test that verifies {@code @ConditionalOnProperty} works correctly
  * with properties defined in plugin {@code plugin.yml} files.
  *
- * <p>This test proves that the {@code GrailsPluginEnvironmentPostProcessor} loads
+ * <p>This test proves that the {@code GrailsEnvironmentPostProcessor} loads
  * plugin configuration files early enough in the Spring Boot lifecycle for
  * {@code @ConditionalOnProperty} annotations on {@code @AutoConfiguration} classes
  * to evaluate correctly.</p>

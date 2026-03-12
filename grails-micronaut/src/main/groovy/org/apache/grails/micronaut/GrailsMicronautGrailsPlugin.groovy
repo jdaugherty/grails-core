@@ -80,7 +80,7 @@ class GrailsMicronautGrailsPlugin extends Plugin {
                     .findAll { it.propertySource != null }
                     .each { plugin ->
                         // Look up the plugin's property source from the Spring environment,
-                        // where it was loaded by GrailsPluginEnvironmentPostProcessor
+                        // where it was loaded by GrailsEnvironmentPostProcessor
                         String pluginName = plugin.name
                         String ymlSourceName = pluginName + PLUGIN_YML_SUFFIX
                         String groovySourceName = pluginName + PLUGIN_GROOVY_SUFFIX
