@@ -36,8 +36,7 @@ import org.apache.grails.core.plugins.GrailsPluginDiscovery;
  */
 public class MockGrailsPluginManager extends AbstractGrailsPluginManager {
     public MockGrailsPluginManager(GrailsApplication application) {
-        super(application, new MockGrailsPluginDiscovery());
-        loadPlugins();
+        this(application, new MockGrailsPluginDiscovery());
     }
 
     public MockGrailsPluginManager(GrailsApplication application, GrailsPluginDiscovery pluginDiscovery) {
