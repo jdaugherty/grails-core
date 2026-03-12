@@ -67,7 +67,7 @@ class ThreeGrailsPlugin {
         def three = gcl.loadClass("ThreeGrailsPlugin")
         def four = gcl.loadClass("FourGrailsPlugin")
         def five = gcl.loadClass("FiveGrailsPlugin")
-        GrailsPluginDiscovery pluginDiscovery = new GrailsPluginDiscovery([one, two, three, four, five] as Class[],)
+        def pluginDiscovery = new GrailsPluginDiscovery([one, two, three, four, five] as Class[],)
         pluginDiscovery.loadClasspathPlugins = false
         pluginDiscovery.getPlugins(new StandardEnvironment());
         def pluginManager = new DefaultGrailsPluginManager(
