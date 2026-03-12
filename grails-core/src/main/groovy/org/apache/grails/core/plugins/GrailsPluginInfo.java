@@ -116,6 +116,6 @@ public final class GrailsPluginInfo {
 
     @Override
     public String toString() {
-        return "PluginInfoAndConfig[" + metadata.name() + "]";
+        return "GrailsPluginInfo[" + metadata.name() + "]";
     }
 }
