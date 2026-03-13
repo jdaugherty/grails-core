@@ -389,20 +389,38 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
 
     /**
      * @deprecated Core plugin loading is now handled by {@link org.apache.grails.core.plugins.GrailsPluginDiscovery}.
-     * This method is a no-op and will be removed in Grails 8.0.0.
+     * Use {@link org.apache.grails.core.plugins.GrailsPluginDiscovery#setLoadClasspathPlugins(boolean)} instead.
+     * This method will be removed in Grails 8.0.0.
      */
     @Deprecated(forRemoval = true, since = "7.1")
     @Override
     public void setLoadCorePlugins(boolean shouldLoadCorePlugins) {
+        pluginDiscovery.setLoadClasspathPlugins(shouldLoadCorePlugins);
+        reinitializeDiscovery();
     }
 
     /**
      * @deprecated Plugin filtering is now handled by {@link org.apache.grails.core.plugins.GrailsPluginDiscovery}.
-     * This method is a no-op and will be removed in Grails 8.0.0.
+     * Use {@link org.apache.grails.core.plugins.GrailsPluginDiscovery#setPluginFilter(PluginFilter)} instead.
+     * This method will be removed in Grails 8.0.0.
      */
     @Deprecated(forRemoval = true, since = "7.1")
     @Override
     public void setPluginFilter(PluginFilter pluginFilter) {
+        pluginDiscovery.setPluginFilter(pluginFilter);
+        reinitializeDiscovery();
+    }
+
+    /**
+     * Resets and reinitializes plugin discovery if an application context is available.
+     * When called before the application context is set (the typical pre-startup case),
+     * the forwarded settings will be picked up during normal lifecycle initialization.
+     */
+    private void reinitializeDiscovery() {
+        if (applicationContext != null) {
+            pluginDiscovery.reset();
+            pluginDiscovery.init(applicationContext.getEnvironment());
+        }
     }
 
     public void informOfClassChange(Class<?> aClass) {

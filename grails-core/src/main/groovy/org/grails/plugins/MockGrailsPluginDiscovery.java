@@ -22,6 +22,7 @@ import grails.plugins.GrailsPlugin;
 import org.apache.grails.core.plugins.DefaultGrailsPluginDiscovery;
 import org.apache.grails.core.plugins.GrailsPluginInfo;
 import org.apache.grails.core.plugins.GrailsPluginUtils;
+import org.springframework.core.env.Environment;
 
 public class MockGrailsPluginDiscovery extends DefaultGrailsPluginDiscovery {
 
@@ -32,6 +33,14 @@ public class MockGrailsPluginDiscovery extends DefaultGrailsPluginDiscovery {
 
     public MockGrailsPluginDiscovery(Class<?>[] pluginClasses) {
         super(pluginClasses);
+    }
+
+    /**
+     * No-op: mock discovery does not scan the classpath.
+     * Plugins are registered manually via {@link #registerMockPlugin}.
+     */
+    @Override
+    public void init(Environment environment) {
     }
 
     public void registerMockPlugin(GrailsPlugin plugin) {
