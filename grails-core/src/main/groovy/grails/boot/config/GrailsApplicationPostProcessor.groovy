@@ -98,6 +98,24 @@ class GrailsApplicationPostProcessor implements BeanDefinitionRegistryPostProces
         }
     }
 
+    /**
+     * @deprecated Use {@link #GrailsApplicationPostProcessor(GrailsApplicationLifeCycle, ApplicationContext, GrailsPluginDiscovery, Class[])} instead.
+     * Plugin discovery is now provided explicitly. This constructor creates a default discovery instance.
+     * Will be removed in Grails 8.0.0.
+     */
+    @Deprecated(forRemoval = true, since = "7.1")
+    GrailsApplicationPostProcessor(GrailsApplicationLifeCycle lifeCycle, ApplicationContext applicationContext, Class...classes) {
+        this(lifeCycle, applicationContext, new org.apache.grails.core.plugins.DefaultGrailsPluginDiscovery(), classes)
+    }
+
+    /**
+     * @deprecated Plugin manager customization is now handled through {@link org.apache.grails.core.plugins.GrailsPluginDiscovery}.
+     * This method is a no-op and will be removed in Grails 8.0.0.
+     */
+    @Deprecated(forRemoval = true, since = "7.1")
+    protected void customizePluginManager(GrailsPluginManager pluginManager) {
+    }
+
     protected final void initializeGrailsApplication(ApplicationContext applicationContext) {
         if (applicationContext == null) {
             throw new IllegalStateException('ApplicationContext should not be null')

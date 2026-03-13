@@ -41,6 +41,7 @@ import org.springframework.core.io.Resource;
 import grails.core.GrailsApplication;
 import grails.core.support.ParentApplicationContextAware;
 import grails.plugins.exceptions.PluginException;
+import org.apache.grails.core.plugins.DefaultGrailsPluginDiscovery;
 import org.apache.grails.core.plugins.GrailsPluginDescriptor;
 import org.apache.grails.core.plugins.GrailsPluginDiscovery;
 import org.apache.grails.core.plugins.GrailsPluginInfo;
@@ -91,6 +92,36 @@ public class DefaultGrailsPluginManager extends AbstractGrailsPluginManager {
 
     public DefaultGrailsPluginManager(GrailsApplication application, GrailsPluginDiscovery pluginDiscovery) {
         super(application, pluginDiscovery);
+    }
+
+    /**
+     * @deprecated Use {@link #DefaultGrailsPluginManager(GrailsApplication, GrailsPluginDiscovery)} instead.
+     * Plugin discovery is now handled by {@link GrailsPluginDiscovery}. This constructor creates a default
+     * discovery instance. Will be removed in Grails 8.0.0.
+     */
+    @Deprecated(forRemoval = true, since = "7.1")
+    public DefaultGrailsPluginManager(String resourcePath, GrailsApplication application) {
+        this(application, new DefaultGrailsPluginDiscovery());
+    }
+
+    /**
+     * @deprecated Use {@link #DefaultGrailsPluginManager(GrailsApplication, GrailsPluginDiscovery)} instead.
+     * Plugin discovery is now handled by {@link GrailsPluginDiscovery}. This constructor creates a default
+     * discovery instance. Will be removed in Grails 8.0.0.
+     */
+    @Deprecated(forRemoval = true, since = "7.1")
+    public DefaultGrailsPluginManager(String[] pluginResources, GrailsApplication application) {
+        this(application, new DefaultGrailsPluginDiscovery());
+    }
+
+    /**
+     * @deprecated Use {@link #DefaultGrailsPluginManager(GrailsApplication, GrailsPluginDiscovery)} instead.
+     * Plugin discovery is now handled by {@link GrailsPluginDiscovery}. This constructor creates a default
+     * discovery instance. Will be removed in Grails 8.0.0.
+     */
+    @Deprecated(forRemoval = true, since = "7.1")
+    public DefaultGrailsPluginManager(Class<?>[] plugins, GrailsApplication application) {
+        this(application, new DefaultGrailsPluginDiscovery());
     }
 
     public GrailsPlugin[] getUserPlugins() {

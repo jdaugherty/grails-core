@@ -54,6 +54,7 @@ import grails.core.ArtefactHandler;
 import grails.core.GrailsApplication;
 import grails.plugins.GrailsPlugin;
 import grails.plugins.GrailsPluginManager;
+import grails.plugins.PluginFilter;
 import grails.plugins.Plugin;
 import grails.plugins.exceptions.PluginException;
 import grails.util.Environment;
@@ -384,6 +385,24 @@ public abstract class AbstractGrailsPluginManager implements GrailsPluginManager
 
     public boolean isShutdown() {
         return shutdown;
+    }
+
+    /**
+     * @deprecated Core plugin loading is now handled by {@link org.apache.grails.core.plugins.GrailsPluginDiscovery}.
+     * This method is a no-op and will be removed in Grails 8.0.0.
+     */
+    @Deprecated(forRemoval = true, since = "7.1")
+    @Override
+    public void setLoadCorePlugins(boolean shouldLoadCorePlugins) {
+    }
+
+    /**
+     * @deprecated Plugin filtering is now handled by {@link org.apache.grails.core.plugins.GrailsPluginDiscovery}.
+     * This method is a no-op and will be removed in Grails 8.0.0.
+     */
+    @Deprecated(forRemoval = true, since = "7.1")
+    @Override
+    public void setPluginFilter(PluginFilter pluginFilter) {
     }
 
     public void informOfClassChange(Class<?> aClass) {
