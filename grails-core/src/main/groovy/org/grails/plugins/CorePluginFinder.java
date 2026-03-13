@@ -18,17 +18,14 @@
  */
 package org.grails.plugins;
 
-import org.springframework.context.ApplicationContext;
-
 import grails.core.GrailsApplication;
-import grails.core.support.ParentApplicationContextAware;
 
 /**
  * @deprecated Plugin discovery is now handled by {@link org.apache.grails.core.plugins.GrailsPluginDiscovery}.
  * This compatibility stub will be removed in Grails 8.0.0.
  */
 @Deprecated(forRemoval = true, since = "7.1")
-public class CorePluginFinder implements ParentApplicationContextAware {
+public class CorePluginFinder {
 
     public static final String CORE_PLUGIN_PATTERN = "META-INF/grails-plugin.xml";
 
@@ -54,15 +51,6 @@ public class CorePluginFinder implements ParentApplicationContextAware {
      */
     @Deprecated(forRemoval = true, since = "7.1")
     public BinaryGrailsPluginDescriptor getBinaryDescriptor(Class<?> pluginClass) {
-        throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
-    }
-
-    /**
-     * @deprecated Use {@link org.apache.grails.core.plugins.GrailsPluginDiscovery} instead.
-     */
-    @Deprecated(forRemoval = true, since = "7.1")
-    @Override
-    public void setParentApplicationContext(ApplicationContext parent) {
         throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 }

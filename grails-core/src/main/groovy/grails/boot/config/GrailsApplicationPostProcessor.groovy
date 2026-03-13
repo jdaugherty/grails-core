@@ -100,12 +100,24 @@ class GrailsApplicationPostProcessor implements BeanDefinitionRegistryPostProces
 
     /**
      * @deprecated Use {@link #GrailsApplicationPostProcessor(GrailsApplicationLifeCycle, ApplicationContext, GrailsPluginDiscovery, Class[])} instead.
-     * Plugin discovery is now provided explicitly. This constructor creates a default discovery instance.
+     * Plugin discovery is resolved from the application context when available, otherwise a default instance is created.
      * Will be removed in Grails 8.0.0.
      */
     @Deprecated(forRemoval = true, since = "7.1")
     GrailsApplicationPostProcessor(GrailsApplicationLifeCycle lifeCycle, ApplicationContext applicationContext, Class...classes) {
-        this(lifeCycle, applicationContext, new org.apache.grails.core.plugins.DefaultGrailsPluginDiscovery(), classes)
+        this(lifeCycle, applicationContext, resolvePluginDiscovery(applicationContext), classes)
+    }
+
+    /**
+     * Resolves the {@link GrailsPluginDiscovery} from the application context if available,
+     * otherwise creates a new default instance. The bootstrap registry promotes the discovery
+     * bean before context refresh, so it is safe to look up by bean name at this stage.
+     */
+    private static GrailsPluginDiscovery resolvePluginDiscovery(ApplicationContext applicationContext) {
+        if (applicationContext != null && applicationContext.containsBean(GrailsPluginDiscovery.BEAN_NAME)) {
+            return (GrailsPluginDiscovery) applicationContext.getBean(GrailsPluginDiscovery.BEAN_NAME)
+        }
+        return new org.apache.grails.core.plugins.DefaultGrailsPluginDiscovery()
     }
 
     /**
