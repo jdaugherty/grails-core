@@ -18,76 +18,28 @@
  */
 package org.grails.plugins;
 
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
-import org.springframework.core.env.Environment;
-import org.springframework.util.StringUtils;
-
 import grails.config.Config;
-import grails.config.Settings;
 import grails.plugins.PluginFilter;
 
 /**
  * @deprecated Use {@link org.apache.grails.core.plugins.filters.PluginFilterRetriever} instead.
- * This compatibility bridge will be removed in Grails 8.0.0.
+ * This compatibility stub will be removed in Grails 8.0.0.
  */
 @Deprecated(forRemoval = true, since = "7.1")
 public class PluginFilterRetriever extends org.apache.grails.core.plugins.filters.PluginFilterRetriever {
 
+    private static final String UNSUPPORTED_MESSAGE =
+            "PluginFilterRetriever.getPluginFilter(Config) is no longer supported. " +
+            "Use org.apache.grails.core.plugins.filters.PluginFilterRetriever.getPluginFilter(Environment) instead.";
+
     /**
-     * @deprecated Use {@link org.apache.grails.core.plugins.filters.PluginFilterRetriever#getPluginFilter(Environment)} instead.
+     * @deprecated Use {@link org.apache.grails.core.plugins.filters.PluginFilterRetriever#getPluginFilter(org.springframework.core.env.Environment)} instead.
+     * The Environment always has all configuration, so it is adaptable for all use cases.
+     *
+     * @throws UnsupportedOperationException always
      */
     @Deprecated(forRemoval = true, since = "7.1")
     public PluginFilter getPluginFilter(Config config) {
-        if (config == null) {
-            throw new IllegalArgumentException("Config should not be null");
-        }
-
-        if (config instanceof Environment environment) {
-            return super.getPluginFilter(environment);
-        }
-
-        Object includes = config.getProperty(Settings.PLUGIN_INCLUDES, Object.class, null);
-        Object excludes = config.getProperty(Settings.PLUGIN_EXCLUDES, Object.class, null);
-        return getPluginFilter(includes, excludes);
-    }
-
-    /**
-     * @deprecated Use {@link org.apache.grails.core.plugins.filters.PluginFilterRetriever#getPluginFilter(Environment)} instead.
-     */
-    @Deprecated(forRemoval = true, since = "7.1")
-    PluginFilter getPluginFilter(Object includes, Object excludes) {
-        if (includes != null) {
-            if (includes instanceof Collection<?> includesCollection) {
-                return new org.apache.grails.core.plugins.filters.IncludingPluginFilter(toSet(includesCollection));
-            }
-            return new org.apache.grails.core.plugins.filters.IncludingPluginFilter(StringUtils.commaDelimitedListToStringArray(includes.toString()));
-        }
-
-        if (excludes != null) {
-            if (excludes instanceof Collection<?> excludesCollection) {
-                return new org.apache.grails.core.plugins.filters.ExcludingPluginFilter(toSet(excludesCollection));
-            }
-            return new org.apache.grails.core.plugins.filters.ExcludingPluginFilter(StringUtils.commaDelimitedListToStringArray(excludes.toString()));
-        }
-
-        return new org.apache.grails.core.plugins.filters.NoOpPluginFilter();
-    }
-
-    private static Set<String> toSet(Collection<?> values) {
-        var set = new LinkedHashSet<String>();
-        for (Object v : values) {
-            if (v == null) {
-                continue;
-            }
-
-            String s = v.toString().trim();
-            if (!s.isEmpty()) {
-                set.add(s);
-            }
-        }
-        return set;
+        throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
     }
 }

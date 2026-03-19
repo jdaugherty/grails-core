@@ -41,7 +41,6 @@ import org.springframework.core.io.Resource;
 import grails.core.GrailsApplication;
 import grails.core.support.ParentApplicationContextAware;
 import grails.plugins.exceptions.PluginException;
-import org.apache.grails.core.plugins.DefaultGrailsPluginDiscovery;
 import org.apache.grails.core.plugins.GrailsPluginDescriptor;
 import org.apache.grails.core.plugins.GrailsPluginDiscovery;
 import org.apache.grails.core.plugins.GrailsPluginInfo;
@@ -96,32 +95,48 @@ public class DefaultGrailsPluginManager extends AbstractGrailsPluginManager {
 
     /**
      * @deprecated Use {@link #DefaultGrailsPluginManager(GrailsApplication, GrailsPluginDiscovery)} instead.
-     * Plugin discovery is now handled by {@link GrailsPluginDiscovery}. This constructor forwards
-     * the resource path to the discovery instance. Will be removed in Grails 8.0.0.
+     * Plugin discovery is now handled by {@link GrailsPluginDiscovery}. This constructor fetches the
+     * existing discovery bean, resets and reinitializes it. Will be removed in Grails 8.0.0.
      */
     @Deprecated(forRemoval = true, since = "7.1")
     public DefaultGrailsPluginManager(String resourcePath, GrailsApplication application) {
-        this(application, new DefaultGrailsPluginDiscovery(resourcePath));
+        this(application, resolveAndReinitializeDiscovery(application));
     }
 
     /**
      * @deprecated Use {@link #DefaultGrailsPluginManager(GrailsApplication, GrailsPluginDiscovery)} instead.
-     * Plugin discovery is now handled by {@link GrailsPluginDiscovery}. This constructor forwards
-     * the plugin resources to the discovery instance. Will be removed in Grails 8.0.0.
+     * Plugin discovery is now handled by {@link GrailsPluginDiscovery}. This constructor fetches the
+     * existing discovery bean, resets and reinitializes it. Will be removed in Grails 8.0.0.
      */
     @Deprecated(forRemoval = true, since = "7.1")
     public DefaultGrailsPluginManager(String[] pluginResources, GrailsApplication application) {
-        this(application, new DefaultGrailsPluginDiscovery(pluginResources));
+        this(application, resolveAndReinitializeDiscovery(application));
     }
 
     /**
      * @deprecated Use {@link #DefaultGrailsPluginManager(GrailsApplication, GrailsPluginDiscovery)} instead.
-     * Plugin discovery is now handled by {@link GrailsPluginDiscovery}. This constructor forwards
-     * the plugin classes to the discovery instance. Will be removed in Grails 8.0.0.
+     * Plugin discovery is now handled by {@link GrailsPluginDiscovery}. This constructor fetches the
+     * existing discovery bean, resets and reinitializes it. Will be removed in Grails 8.0.0.
      */
     @Deprecated(forRemoval = true, since = "7.1")
     public DefaultGrailsPluginManager(Class<?>[] plugins, GrailsApplication application) {
-        this(application, new DefaultGrailsPluginDiscovery(plugins));
+        this(application, resolveAndReinitializeDiscovery(application));
+    }
+
+    /**
+     * Resolves the {@link GrailsPluginDiscovery} bean from the application context,
+     * resets and reinitializes it. The GrailsApplication always has an application context
+     * set when these deprecated constructors are called.
+     */
+    private static GrailsPluginDiscovery resolveAndReinitializeDiscovery(GrailsApplication application) {
+        ApplicationContext ctx = application.getMainContext();
+        GrailsPluginDiscovery discovery = (GrailsPluginDiscovery) ctx.getBean(GrailsPluginDiscovery.BEAN_NAME);
+        LOG.warn("Using deprecated DefaultGrailsPluginManager constructor. " +
+                "Plugin discovery should be configured through the GrailsPluginDiscovery bean. " +
+                "Reinitializing plugin discovery.");
+        discovery.reset();
+        discovery.init(ctx.getEnvironment());
+        return discovery;
     }
 
     public GrailsPlugin[] getUserPlugins() {

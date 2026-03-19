@@ -109,23 +109,34 @@ class GrailsApplicationPostProcessor implements BeanDefinitionRegistryPostProces
     }
 
     /**
-     * Resolves the {@link GrailsPluginDiscovery} from the application context if available,
-     * otherwise creates a new default instance. The bootstrap registry promotes the discovery
-     * bean before context refresh, so it is safe to look up by bean name at this stage.
+     * Resolves the {@link GrailsPluginDiscovery} from the application context.
+     * The bootstrap registry promotes the discovery bean before context refresh,
+     * so it is always available by bean name at this stage.
+     *
+     * @throws IllegalStateException if the application context is null or does not contain a GrailsPluginDiscovery bean
      */
     private static GrailsPluginDiscovery resolvePluginDiscovery(ApplicationContext applicationContext) {
-        if (applicationContext != null && applicationContext.containsBean(GrailsPluginDiscovery.BEAN_NAME)) {
-            return (GrailsPluginDiscovery) applicationContext.getBean(GrailsPluginDiscovery.BEAN_NAME)
+        if (applicationContext == null || !applicationContext.containsBean(GrailsPluginDiscovery.BEAN_NAME)) {
+            throw new IllegalStateException(
+                    'GrailsPluginDiscovery bean not found in ApplicationContext. ' +
+                    'Use GrailsApplicationPostProcessor(GrailsApplicationLifeCycle, ApplicationContext, GrailsPluginDiscovery, Class[]) instead.'
+            )
         }
-        return new org.apache.grails.core.plugins.DefaultGrailsPluginDiscovery()
+        return (GrailsPluginDiscovery) applicationContext.getBean(GrailsPluginDiscovery.BEAN_NAME)
     }
 
     /**
      * @deprecated Plugin manager customization is now handled through {@link org.apache.grails.core.plugins.GrailsPluginDiscovery}.
-     * This method is a no-op and will be removed in Grails 8.0.0.
+     * This method will be removed in Grails 8.0.0.
+     *
+     * @throws UnsupportedOperationException always - callers must switch to {@link org.apache.grails.core.plugins.GrailsPluginDiscovery}
      */
     @Deprecated(forRemoval = true, since = "7.1")
     protected void customizePluginManager(GrailsPluginManager pluginManager) {
+        throw new UnsupportedOperationException(
+                'customizePluginManager() is no longer supported. ' +
+                'Use org.apache.grails.core.plugins.GrailsPluginDiscovery to configure plugin discovery instead.'
+        )
     }
 
     protected final void initializeGrailsApplication(ApplicationContext applicationContext) {
