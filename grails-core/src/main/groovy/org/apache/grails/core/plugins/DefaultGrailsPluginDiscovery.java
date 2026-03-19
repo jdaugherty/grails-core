@@ -53,7 +53,6 @@ public class DefaultGrailsPluginDiscovery implements GrailsPluginDiscovery {
     protected boolean loadClasspathPlugins = true;
     protected boolean requireClasspathPlugin = true;
     protected final PluginFilterRetriever filterRetriever;
-    private boolean initialized = false;
 
     public DefaultGrailsPluginDiscovery() {
         this(new PluginFilterRetriever());
@@ -110,7 +109,7 @@ public class DefaultGrailsPluginDiscovery implements GrailsPluginDiscovery {
     }
 
     public void init(Environment environment) {
-        if (!initialized) {
+        if (plugins == null) {
             if (environment == null) {
                 throw new IllegalArgumentException("Environment must be provided to determine plugin order");
             }
@@ -246,6 +245,7 @@ public class DefaultGrailsPluginDiscovery implements GrailsPluginDiscovery {
         List<GrailsPluginInfo> filteredPlugins = filterPlugins(allPlugins, environment);
 
         reset();
+        plugins = new LinkedHashMap<>();
 
         if (filteredPlugins.isEmpty()) {
             LOG.debug("All plugins were excluded by plugin filtering");
@@ -268,7 +268,6 @@ public class DefaultGrailsPluginDiscovery implements GrailsPluginDiscovery {
                 GrailsPluginInfo::loadAfterNames,
                 GrailsPluginInfo::loadBeforeNames
         );
-        initialized = true;
     }
 
     private void processDelayedEvictions() {
@@ -554,8 +553,8 @@ public class DefaultGrailsPluginDiscovery implements GrailsPluginDiscovery {
 
     @Override
     public void reset() {
-        initialized = false;
-        plugins = new LinkedHashMap<>();
+        LOG.warn("Resetting plugin discovery - plugins will be reloaded on next init()");
+        plugins = null;
         loadOrderedPlugins = new ArrayList<>();
         pluginToObserverMap = new HashMap<>();
         delayedLoadPlugins = new LinkedList<>();

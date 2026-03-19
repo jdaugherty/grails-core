@@ -18,29 +18,25 @@
  */
 package org.grails.plugins;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+
 import grails.plugins.GrailsPlugin;
 import org.apache.grails.core.plugins.DefaultGrailsPluginDiscovery;
 import org.apache.grails.core.plugins.GrailsPluginInfo;
 import org.apache.grails.core.plugins.GrailsPluginUtils;
-import org.springframework.core.env.Environment;
 
 public class MockGrailsPluginDiscovery extends DefaultGrailsPluginDiscovery {
 
     public MockGrailsPluginDiscovery() {
         super();
-        reset(); // do not search on the classpath by default
+        initPluginsIfNotDefined();
     }
 
     public MockGrailsPluginDiscovery(Class<?>[] pluginClasses) {
         super(pluginClasses);
-    }
-
-    /**
-     * No-op: mock discovery does not scan the classpath.
-     * Plugins are registered manually via {@link #registerMockPlugin}.
-     */
-    @Override
-    public void init(Environment environment) {
     }
 
     public void registerMockPlugin(GrailsPlugin plugin) {
@@ -61,7 +57,13 @@ public class MockGrailsPluginDiscovery extends DefaultGrailsPluginDiscovery {
 
     private void initPluginsIfNotDefined() {
         if (plugins == null) {
-            reset();
+            plugins = new LinkedHashMap<>();
+            loadOrderedPlugins = new ArrayList<>();
+            orderedPlugins = new ArrayList<>();
+            pluginToObserverMap = new HashMap<>();
+            delayedLoadPlugins = new LinkedList<>();
+            failedPlugins = new HashMap<>();
+            delayedEvictions = new HashMap<>();
         }
     }
 }
