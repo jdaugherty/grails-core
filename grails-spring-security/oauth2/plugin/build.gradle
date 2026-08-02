@@ -56,7 +56,6 @@ dependencies {
 	}
 	// GrailsConsole (used by init-o-auth2) needs jline at compile time
 	cliImplementation 'org.jline:jline'
-	cliImplementation 'org.jline:jansi'
 
 	api project(':grails-spring-security'), {
 		// api: GrailsUserDetailsService, SpringSecurityService

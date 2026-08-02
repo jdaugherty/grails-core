@@ -33,7 +33,7 @@ ext {
             'grails-publish-plugin.version' : '1.0.0-M2',
             'javaparser-core.version'       : '3.28.2',
             // Tracks the JLine version Groovy ships (groovy-groovysh), so the framework and groovysh
-            // share one terminal stack. Also drives org.jline:jansi - keep in step with groovy.version.
+            // share one terminal stack - keep in step with groovy.version.
             'jline.version'                 : '3.30.9',
             'jna.version'                   : '5.19.1',
             'jquery.version'                : '4.0.0',
@@ -61,7 +61,6 @@ ext {
             'grails-publish-plugin'   : "org.apache.grails.gradle:grails-publish:${gradleBomDependencyVersions['grails-publish-plugin.version']}",
             'javaparser-core'         : "com.github.javaparser:javaparser-core:${gradleBomDependencyVersions['javaparser-core.version']}",
             'jline'                   : "org.jline:jline:${gradleBomDependencyVersions['jline.version']}",
-            'jline-jansi'             : "org.jline:jansi:${gradleBomDependencyVersions['jline.version']}",
             'jna'                     : "net.java.dev.jna:jna:${gradleBomDependencyVersions['jna.version']}",
             'objenesis'               : "org.objenesis:objenesis:${gradleBomDependencyVersions['objenesis.version']}",
             'spring-boot-cli'         : "org.springframework.boot:spring-boot-cli:${gradleBomDependencyVersions['spring-boot.version']}",

@@ -54,8 +54,7 @@ dependencies {
     api 'org.apache.groovy:groovy'
 
     // command line requirements
-    api  'org.jline:jline'
-    compileOnly 'org.jline:jansi'
+    compileOnly 'org.jline:jline'
 
     // Ant
     api 'org.apache.ant:ant'

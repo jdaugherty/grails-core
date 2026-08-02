@@ -37,8 +37,10 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import grails.artefact.Artefact;
-import grails.build.logging.GrailsConsole;
 import grails.compiler.ast.AllArtefactClassInjector;
 import grails.compiler.ast.ClassInjector;
 import grails.compiler.ast.GlobalClassInjector;
@@ -56,6 +58,8 @@ import org.apache.grails.common.compiler.GroovyTransformOrder;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class ArtefactTypeAstTransformation extends AbstractArtefactTypeAstTransformation implements CompilationUnitAware {
     private static final ClassNode MY_TYPE = new ClassNode(Artefact.class);
+
+    private static final Logger LOG = LoggerFactory.getLogger(ArtefactTypeAstTransformation.class);
 
     protected CompilationUnit compilationUnit;
 
@@ -179,11 +183,10 @@ public class ArtefactTypeAstTransformation extends AbstractArtefactTypeAstTransf
                 }
             }
         } catch (RuntimeException e) {
-            try {
-                GrailsConsole.getInstance().error("Error occurred calling AST injector: " + e.getMessage(), e);
-            } catch (Throwable t) {
-                // ignore it
-            }
+            // this runs inside the Groovy compiler, so report through the build's logger rather than
+            // the CLI console - the console belongs to the cli tier and is not on an application's
+            // compile classpath. The exception is rethrown either way.
+            LOG.error("Error occurred calling AST injector: {}", e.getMessage(), e);
             throw e;
         }
     }

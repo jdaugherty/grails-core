@@ -18,7 +18,6 @@
  */
 package org.grails.forge.cli;
 
-import org.jline.jansi.AnsiConsole;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
@@ -62,7 +61,8 @@ public class InteractiveShell {
     }
 
     public void start() {
-        AnsiConsole.systemInstall();
+        // no ansi stream installation: JLine's terminal enables virtual-terminal processing where the
+        // platform needs it, and picocli resolves ansi support itself via Help.Ansi.AUTO
         try {
             PicocliJLineCompleter picocliCommands = new PicocliJLineCompleter(commandLine.getCommandSpec());
             Terminal terminal = TerminalBuilder.terminal();
@@ -96,8 +96,6 @@ public class InteractiveShell {
             }
         } catch (Throwable t) {
             onError.apply(t, commandLine);
-        } finally {
-            AnsiConsole.systemUninstall();
         }
     }
 }

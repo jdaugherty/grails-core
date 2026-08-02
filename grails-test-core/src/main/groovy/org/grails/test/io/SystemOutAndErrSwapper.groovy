@@ -20,8 +20,6 @@ package org.grails.test.io
 
 import groovy.transform.CompileStatic
 
-import org.grails.build.logging.GrailsConsolePrintStream
-
 /**
  * Convenience class to temporarily swap in an output stream
  * for standard error and standard out.
@@ -117,8 +115,13 @@ class SystemOutAndErrSwapper {
         streams
     }
 
+    /**
+     * Captures everything written to the swapped stream. This used to extend GrailsConsolePrintStream,
+     * but every method that routed output through the CLI console was overridden here anyway, so the
+     * inheritance only coupled test support to the console. A plain PrintStream is equivalent.
+     */
     @CompileStatic
-    static class TestOutputCapturingPrintStream extends GrailsConsolePrintStream {
+    static class TestOutputCapturingPrintStream extends PrintStream {
         BufferedWriter textOut
 
         TestOutputCapturingPrintStream(PrintStream out) {

@@ -54,9 +54,14 @@ dependencies {
     implementation 'org.apache.groovy:groovy-json'
 
     api project(':grails-bootstrap')
+    // the console and the jline completion handler now ship as grails-bootstrap's cli companion
+    api(project(':grails-bootstrap')) {
+        capabilities {
+            requireCapability('org.apache.grails.bootstrap:grails-bootstrap-cli')
+        }
+    }
     api 'org.apache.grails.gradle:grails-gradle-model'
     api 'org.apache.ant:ant'
-    api 'org.jline:jansi'
     api 'org.jline:jline'
     api("org.gradle:gradle-tooling-api:$gradleToolingApiVersion") {
         exclude group: 'org.slf4j', module: 'slf4j-api'

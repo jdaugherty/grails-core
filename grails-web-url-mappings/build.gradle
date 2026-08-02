@@ -55,7 +55,6 @@ dependencies {
     }
     // ANSI console output for the url-mappings report — cli-only, never on an app runtime classpath.
     // jline comes with it: the renderer reads GrailsConsole, whose signature Groovy has to resolve.
-    cliImplementation 'org.jline:jansi'
     cliImplementation 'org.jline:jline'
     cliCompileOnly 'jakarta.servlet:jakarta.servlet-api'
 

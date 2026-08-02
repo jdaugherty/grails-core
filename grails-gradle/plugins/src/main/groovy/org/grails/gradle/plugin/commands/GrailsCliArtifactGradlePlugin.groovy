@@ -21,6 +21,7 @@ package org.grails.gradle.plugin.commands
 import groovy.transform.CompileStatic
 
 import org.gradle.api.GradleException
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -30,10 +31,16 @@ import org.gradle.api.component.ConfigurationVariantDetails
 import org.gradle.api.component.SoftwareComponentFactory
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
+import org.gradle.api.tasks.testing.Test
 import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.language.base.plugins.LifecycleBasePlugin
 
 import javax.inject.Inject
+
+import org.grails.gradle.plugin.core.TestPhase
+import org.grails.gradle.plugin.core.TestPhasesGradlePlugin
 
 import org.apache.grails.gradle.publish.AdditionalPublication
 import org.apache.grails.gradle.publish.GrailsPublishExtension
@@ -71,6 +78,15 @@ import org.apache.grails.gradle.publish.GrailsPublishExtension
 abstract class GrailsCliArtifactGradlePlugin implements Plugin<Project> {
 
     public static final String CLI_SOURCE_SET_NAME = 'cli'
+    public static final String CLI_TEST_SOURCE_SET_NAME = 'testCli'
+
+    /** Test phase for cli tests that need a booted application; sources in {@code src/integration-test-cli} */
+    public static final String CLI_INTEGRATION_TEST_PHASE_NAME = 'integrationTestCli'
+    public static final String CLI_INTEGRATION_TEST_SOURCE_FOLDER = 'src/integration-test-cli'
+
+    /** Application config and fixtures shared with the application's own integration test phase */
+    public static final String SHARED_INTEGRATION_TEST_RESOURCES = 'src/integration-test/resources'
+
     public static final String CLI_COMPONENT_NAME = 'cli'
     public static final String CLI_PUBLICATION_NAME = 'cli'
 
@@ -169,16 +185,65 @@ abstract class GrailsCliArtifactGradlePlugin implements Plugin<Project> {
         // coordinate (see CliPublishingSupport)
         CliPublishingSupport.rewritePublishedCliCapabilityDependencies(project)
 
-        // the plugin's tests exercise the cli classes through their public API: the cli output
-        // and the cli dependency buckets flow into the test configurations (dependency-based, so
-        // the wiring is immune to when test tasks snapshot their source set classpaths)
-        for (String testConfiguration : ['testImplementation', 'integrationTestImplementation']) {
-            project.configurations.matching { Configuration it -> it.name == testConfiguration }
-                    .configureEach { Configuration it ->
-                        project.dependencies.add(it.name, cliSourceSet.output)
-                        it.extendsFrom(project.configurations.getByName('cliApi'), project.configurations.getByName('cliImplementation'))
-                    }
+        // The cli tier gets its own test source set (`src/testCli`) rather than leaking into the
+        // main test classpath. `test` must stay a faithful stand-in for an application's production
+        // classpath: if a cli class or a cli-only dependency (jline, jansi) reaches main, that has to
+        // surface as a compile/test failure instead of being silently satisfied by cli wiring.
+        SourceSet testCliSourceSet = sourceSets.create(CLI_TEST_SOURCE_SET_NAME)
+        SourceSet mainSourceSet = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME)
+
+        // testCli sees the cli classes it exercises, the module's own main classes, and the shared
+        // fixtures in `test` (helpers such as output capture are reused by both), and it inherits the
+        // module's declared test toolchain so build files need no extra configuration. The one-way
+        // direction is deliberate: testCli may read test, but test never sees cli.
+        SourceSet testSourceSet = sourceSets.getByName(SourceSet.TEST_SOURCE_SET_NAME)
+        project.dependencies.add(testCliSourceSet.implementationConfigurationName, cliSourceSet.output)
+        project.dependencies.add(testCliSourceSet.implementationConfigurationName, mainSourceSet.output)
+        project.dependencies.add(testCliSourceSet.implementationConfigurationName, testSourceSet.output)
+        project.configurations.named(testCliSourceSet.implementationConfigurationName).configure { Configuration it ->
+            it.extendsFrom(
+                    project.configurations.getByName('cliApi'),
+                    project.configurations.getByName('cliImplementation'),
+                    project.configurations.getByName('testImplementation'))
         }
+        project.configurations.named(testCliSourceSet.runtimeOnlyConfigurationName).configure { Configuration it ->
+            it.extendsFrom(project.configurations.getByName('testRuntimeOnly'))
+        }
+
+        TaskProvider<Test> testCliTask = project.tasks.register(CLI_TEST_SOURCE_SET_NAME, Test) { Test task ->
+            task.group = LifecycleBasePlugin.VERIFICATION_GROUP
+            task.description = 'Runs the tests for the cli tier against the cli classpath.'
+            task.testClassesDirs = testCliSourceSet.output.classesDirs
+            task.classpath = testCliSourceSet.runtimeClasspath
+            task.useJUnitPlatform()
+        }
+        project.tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME).configure { it.dependsOn(testCliTask) }
+
+        // A command boots an application the same way the shell does, so some cli tests need a real
+        // application context. Those get their own phase in src/integration-test-cli - never the
+        // application's own integrationTest phase, which has to keep the production classpath shape.
+        // Registered here rather than left to each build script: a module only creates the folder.
+        project.pluginManager.apply(TestPhasesGradlePlugin)
+        NamedDomainObjectContainer<TestPhase> testPhases =
+                project.extensions.getByName(TestPhasesGradlePlugin.EXTENSION_NAME) as NamedDomainObjectContainer<TestPhase>
+        testPhases.create(CLI_INTEGRATION_TEST_PHASE_NAME) { TestPhase phase ->
+            phase.sourceFolderName.set(CLI_INTEGRATION_TEST_SOURCE_FOLDER)
+        }
+
+        SourceSet cliIntegrationTestSourceSet = sourceSets.getByName(CLI_INTEGRATION_TEST_PHASE_NAME)
+        // both integration phases boot the same application, so its configuration and fixtures are
+        // shared rather than duplicated into the cli phase
+        File sharedResources = project.file(SHARED_INTEGRATION_TEST_RESOURCES)
+        if (sharedResources.directory) {
+            cliIntegrationTestSourceSet.resources.srcDir(sharedResources)
+        }
+        project.configurations.named(cliIntegrationTestSourceSet.implementationConfigurationName)
+                .configure { Configuration it ->
+                    project.dependencies.add(it.name, cliSourceSet.output)
+                    it.extendsFrom(
+                            project.configurations.getByName('cliApi'),
+                            project.configurations.getByName('cliImplementation'))
+                }
 
         project.tasks.named(cliSourceSet.jarTaskName, Jar).configure { Jar jar ->
             // the jar is the primary artifact of its own coordinate — publish it unclassified
