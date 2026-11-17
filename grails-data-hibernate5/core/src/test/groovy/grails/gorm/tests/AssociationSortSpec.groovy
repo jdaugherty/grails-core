@@ -68,6 +68,31 @@ class AssociationSortSpec extends GrailsDataTckSpec<GrailsDataHibernate5TckManag
         manager.session.clear()
     }
 
+    void 'list sorted by #sort keeps a team without a club'() {
+        when:
+        final results = Team.list(sort: sort)
+
+        then:
+        'Unattached First Team' in results*.name
+
+        and: 'the other teams are sorted by their club'
+        results*.name - 'Unattached First Team' == expected
+
+        where:
+        sort        || expected
+        'club.name' || ['Arsenal First Team', 'Chelsea First Team', 'MU First Team']
+        'club.id'   || ['MU First Team', 'Arsenal First Team', 'Chelsea First Team']
+    }
+
+    void 'list sorted by a nested association property keeps a player whose team has no club'() {
+        when:
+        final results = Player.list(sort: 'team.club.name', order: 'desc')
+
+        then:
+        'Unattached Player' in results*.name
+        results*.name - 'Unattached Player' == ['MU Player', 'Chelsea Player', 'Arsenal Player']
+    }
+
     void 'list sorted by a map sorts by every entry of the map'() {
         given:
         new Team(club: Club.findByName('Arsenal'), name: 'Arsenal Second Team').save(failOnError: true, flush: true)
@@ -77,6 +102,55 @@ class AssociationSortSpec extends GrailsDataTckSpec<GrailsDataHibernate5TckManag
 
         then:
         results*.name - 'Unattached First Team' == ['Arsenal Second Team', 'Arsenal First Team', 'Chelsea First Team', 'MU First Team']
+    }
+
+    void 'a paged list sorted by an association property counts a team without a club'() {
+        when:
+        final results = Team.list(sort: 'club.name', max: 2)
+
+        then:
+        results.size() == 2
+        results.totalCount == 4
+    }
+
+    void 'findAll by example sorted by an association property keeps a team without a club'() {
+        when:
+        final results = Team.findAll(new Team(), [sort: 'club.name'])
+
+        then:
+        'Unattached First Team' in results*.name
+        results*.name - 'Unattached First Team' == ['Arsenal First Team', 'Chelsea First Team', 'MU First Team']
+    }
+
+    void 'findAllWhere sorted by an association property finds a team without a club'() {
+        expect:
+        Team.findAllWhere([name: 'Unattached First Team'], [sort: 'club.name'])*.name == ['Unattached First Team']
+    }
+
+    void 'findWhere sorted by an association property finds a team without a club'() {
+        expect:
+        Team.findWhere([name: 'Unattached First Team'], [sort: 'club.name'])?.name == 'Unattached First Team'
+    }
+
+    void 'a criteria query with pagination arguments sorted by an association property keeps a team without a club'() {
+        when:
+        final results = Team.createCriteria().list(sort: 'club.name', max: 10) {
+            like('name', '%First%')
+        }
+
+        then:
+        'Unattached First Team' in results*.name
+        results*.name - 'Unattached First Team' == ['Arsenal First Team', 'Chelsea First Team', 'MU First Team']
+        results.totalCount == 4
+    }
+
+    void 'a dynamic finder sorted by an association property keeps a team without a club'() {
+        when:
+        final results = Team.findAllByNameLike('%First%', [sort: 'club.name'])
+
+        then:
+        'Unattached First Team' in results*.name
+        results*.name - 'Unattached First Team' == ['Arsenal First Team', 'Chelsea First Team', 'MU First Team']
     }
 
     void '#api sorted by two properties of an association joins the association once'() {

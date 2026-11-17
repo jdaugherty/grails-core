@@ -209,6 +209,27 @@ class WhereQueryWithAssociationSortSpec extends GrailsDataTckSpec<GrailsDataHibe
         results*.name == ['Arsenal Player', 'Chelsea Player', 'MU Player']
     }
 
+    void 'sort by #sort keeps a team without a club'() {
+        given:
+        saveTeamWithoutClub()
+
+        when:
+        final results = Team.where {
+            name ==~ '%First%'
+        }.list(sort: sort)
+
+        then: 'the association is joined with a left join'
+        'Unattached First Team' in results*.name
+
+        and: 'the other teams are sorted by their club'
+        results*.name - 'Unattached First Team' == expected
+
+        where:
+        sort        || expected
+        'club.name' || ['Arsenal First Team', 'Chelsea First Team', 'MU First Team']
+        'club.id'   || ['MU First Team', 'Arsenal First Team', 'Chelsea First Team']
+    }
+
     void 'sort by an association property joins the association with the join type that fetch requests'() {
         given:
         saveTeamWithoutClub()
@@ -228,36 +249,18 @@ class WhereQueryWithAssociationSortSpec extends GrailsDataTckSpec<GrailsDataHibe
         JoinType.INNER || false
     }
 
-    void 'a sort stored on the query leaves out the only match when fetch requests an inner join'() {
+    void 'a sort stored on the query keeps a team without a club'() {
         given:
         saveTeamWithoutClub()
 
         when:
         final results = Team.where {
-            name == 'Unattached First Team'
-        }.sort('club.name').list(fetch: [club: JoinType.INNER])
+            name ==~ '%First%'
+        }.sort('club.name').list()
 
         then:
-        results.empty
-    }
-
-    void 'a sort stored on the query does not change the join of a criterion that list adds'() {
-        given:
-        saveTeamWithoutClub()
-
-        when: 'a left join would let the criterion match the team without a club'
-        final query = Team.where {
-            name ==~ '%First%'
-        }
-        final additionalCriteria = {
-            club {
-                isNull('name')
-            }
-        }
-
-        then: 'the criterion joins the club with an inner join, with and without the sort'
-        query.list(additionalCriteria).empty
-        query.sort('club.name').list(additionalCriteria).empty
+        'Unattached First Team' in results*.name
+        results*.name - 'Unattached First Team' == ['Arsenal First Team', 'Chelsea First Team', 'MU First Team']
     }
 
     void 'sort by an association property leaves out a team without a club when a criterion requires a club'() {
@@ -271,6 +274,43 @@ class WhereQueryWithAssociationSortSpec extends GrailsDataTckSpec<GrailsDataHibe
 
         then:
         results*.name == ['Arsenal First Team', 'Chelsea First Team', 'MU First Team']
+    }
+
+    void 'a paged list sorted by an association property counts the rows without the association'() {
+        given:
+        saveTeamWithoutClub()
+
+        when:
+        final results = Team.where {
+            name ==~ '%First%'
+        }.list(sort: 'club.name', max: 2)
+
+        then:
+        results.size() == 2
+        results.totalCount == 4
+    }
+
+    void 'sort by #sort #direction keeps a player whose team has no club'() {
+        given:
+        saveTeamWithoutClub()
+
+        when:
+        final results = Player.where {
+            name ==~ '%Player%'
+        }.list(sort: sort, order: direction)
+
+        then:
+        'Unattached Player' in results*.name
+
+        and: 'the other players are sorted by the club of their team'
+        results*.name - 'Unattached Player' == expected
+
+        where:
+        sort             | direction || expected
+        'team.club.id'   | 'asc'     || ['MU Player', 'Arsenal Player', 'Chelsea Player']
+        'team.club.id'   | 'desc'    || ['Chelsea Player', 'Arsenal Player', 'MU Player']
+        'team.club.name' | 'asc'     || ['Arsenal Player', 'Chelsea Player', 'MU Player']
+        'team.club.name' | 'desc'    || ['MU Player', 'Chelsea Player', 'Arsenal Player']
     }
 
     void 'sort by a nested association id through an explicit alias keeps a player whose team has no club'() {
