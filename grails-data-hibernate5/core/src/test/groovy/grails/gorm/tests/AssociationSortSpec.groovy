@@ -614,6 +614,18 @@ class AssociationSortSpec extends GrailsDataTckSpec<GrailsDataHibernate5TckManag
             },
     ]
 
+    void 'the total of a list that fetches a collection counts each instance once when a sort joins another collection'() {
+        given:
+        saveSquadsToPage()
+
+        when:
+        final results = AssociationSortSquad.list(sort: 'players.name', max: 10, fetch: [reserves: 'join'])
+
+        then:
+        results*.name.sort() == ['First squad', 'Second squad']
+        results.totalCount == 2
+    }
+
     void 'the total of #api sorted by a collection counts the rows that it pages through'() {
         given:
         saveSquadsToPage()
