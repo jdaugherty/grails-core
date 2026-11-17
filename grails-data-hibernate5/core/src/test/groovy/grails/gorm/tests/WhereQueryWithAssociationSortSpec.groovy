@@ -533,6 +533,20 @@ class WhereQueryWithAssociationSortSpec extends GrailsDataTckSpec<GrailsDataHibe
         results*.name == ['Arsenal Player', 'MU Player']
     }
 
+    void 'sort by a property of a collection keeps a team without players'() {
+        given:
+        new Team(club: Club.findByName('Arsenal'), name: 'Playerless First Team').save(failOnError: true, flush: true)
+
+        when:
+        final results = Team.where {
+            name ==~ '%First%'
+        }.list(sort: 'players.name')
+
+        then:
+        'Playerless First Team' in results*.name
+        results*.name - 'Playerless First Team' == ['Arsenal First Team', 'Chelsea First Team', 'MU First Team']
+    }
+
     void 'a paged list sorted by a property of a collection does not fetch the collection'() {
         given:
         saveSquad()
@@ -569,6 +583,24 @@ class WhereQueryWithAssociationSortSpec extends GrailsDataTckSpec<GrailsDataHibe
         then:
         !Hibernate.isInitialized(found.players)
         found.players.size() == 3
+    }
+
+    void 'sort by a property of a collection fetches the collection when fetch requests #fetch'() {
+        given:
+        saveSquad()
+
+        when:
+        final results = Team.where {
+            name == 'Squad'
+        }.list(sort: 'players.name', fetch: [players: fetch])
+
+        then:
+        results*.name == ['Squad']
+        Hibernate.isInitialized(results.first().players)
+        results.first().players.size() == 3
+
+        where:
+        fetch << ['join', JoinType.LEFT, JoinType.INNER, JoinType.RIGHT]
     }
 
     void 'sort by a property of a collection of an association does not fetch the collection'() {

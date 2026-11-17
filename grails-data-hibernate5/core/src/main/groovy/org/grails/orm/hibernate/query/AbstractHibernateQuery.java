@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -127,7 +128,11 @@ public abstract class AbstractHibernateQuery extends Query {
      * still has it: see {@link #createJoin(CriteriaAndAlias)}.
      */
     private final Map<String, JoinType> supersededJoinTypes = new HashMap<>();
-
+    /**
+     * The paths of the collections that are initialized once the query has run: see
+     * {@link #loadFetchedCollectionsAfterQuery()}.
+     */
+    private final Set<String> collectionsLoadedAfterQuery = new LinkedHashSet<>();
     protected LinkedList<String> aliasStack = new LinkedList<>();
     protected LinkedList<PersistentEntity> entityStack = new LinkedList<>();
     protected LinkedList<Association> associationStack = new LinkedList<>();
@@ -603,6 +608,12 @@ public abstract class AbstractHibernateQuery extends Query {
      * requested before a fetch mode replaced it, as it did when the join was made at once. A right
      * join of a collection is made as an inner join: it would return a row without an instance for
      * each element that no instance has.
+     * <p>
+     * A left join of a collection is kept from fetching the collection when criteria use it, since
+     * its rows lack the elements that the criteria leave out, and when only a sort or a projection
+     * uses it, unless the query fetches the collection or another one: see
+     * {@link GrailsHibernateUtil#keepsSortedCollectionUnfetched(Criteria, String)} and
+     * {@link GrailsHibernateUtil#checkSortedCollection(Criteria, String)}.
      */
     private void createJoin(CriteriaAndAlias join) {
         String associationPath = join.associationPath;
@@ -610,6 +621,9 @@ public abstract class AbstractHibernateQuery extends Query {
         JoinType joinType = getRequestedJoinType(join);
         if (joinType == null) {
             joinType = join.usedByCriteria ? JoinType.INNER : JoinType.LEFT;
+            if (!join.usedByCriteria && join.criteria != null && collection) {
+                GrailsHibernateUtil.checkSortedCollection(join.criteria, associationPath);
+            }
         }
         else if (joinType == JoinType.RIGHT && collection) {
             joinType = JoinType.INNER;
@@ -617,6 +631,10 @@ public abstract class AbstractHibernateQuery extends Query {
         org.hibernate.sql.JoinType hibernateJoinType = resolveJoinType(joinType);
         if (join.criteria != null) {
             join.criteria.createAlias(associationPath, join.alias, hibernateJoinType);
+            if (hibernateJoinType == org.hibernate.sql.JoinType.LEFT_OUTER_JOIN && collection &&
+                    (join.usedByCriteria || GrailsHibernateUtil.keepsSortedCollectionUnfetched(join.criteria, associationPath))) {
+                GrailsHibernateUtil.keepCollectionUnfetched(join.criteria, join.alias);
+            }
         }
         else if (join.detachedCriteria != null) {
             join.detachedCriteria.createAlias(associationPath, join.alias, hibernateJoinType);
@@ -627,6 +645,38 @@ public abstract class AbstractHibernateQuery extends Query {
         // a path that the query is restricted to with a subquery is joined, and fetched, with a left join
         JoinType joinType = subqueryJoinedPaths.contains(join.associationPath) ? JoinType.LEFT : joinTypes.get(join.associationPath);
         return joinType == null && join.usedByCriteria ? supersededJoinTypes.get(join.associationPath) : joinType;
+    }
+
+    /**
+     * Has the collections that the query fetches initialized once it has run, when it requests a left
+     * join of a collection that criteria use. Hibernate does not fetch a collection through such a join,
+     * since its rows lack the elements that the criteria leave out, but it then reads a collection that
+     * it does fetch from the columns of that join when both hold elements of the same table. A collection
+     * that is initialized after the query is not read from those columns, and the left join keeps
+     * returning the instances without an element when the criteria accept that. A collection that
+     * criteria use is left alone: it is loaded when it is read.
+     */
+    private void loadFetchedCollectionsAfterQuery() {
+        if (criteria == null || (hibernateProjectionList != null && !hibernateProjectionList.isEmpty())) {
+            return;
+        }
+        Set<String> joinedByCriteria = new HashSet<>();
+        boolean leftJoinRequested = false;
+        for (CriteriaAndAlias join : pendingJoins) {
+            if (join.usedByCriteria && getAssociation(join.associationPath) instanceof ToMany) {
+                joinedByCriteria.add(join.associationPath);
+                leftJoinRequested |= getRequestedJoinType(join) == JoinType.LEFT;
+            }
+        }
+        if (!leftJoinRequested) {
+            return;
+        }
+        for (String path : GrailsHibernateUtil.findFetchedCollections(criteria)) {
+            if (!joinedByCriteria.contains(path)) {
+                criteria.setFetchMode(path, FetchMode.SELECT);
+                collectionsLoadedAfterQuery.add(path);
+            }
+        }
     }
 
     private org.hibernate.sql.JoinType resolveJoinType(JoinType joinType) {
@@ -771,14 +821,7 @@ public abstract class AbstractHibernateQuery extends Query {
                 associationPath.append('.');
             }
             associationPath.append(token);
-            boolean joined = createdAssociationPaths.containsKey(associationPath.toString());
-            CriteriaAndAlias join = getOrRegisterJoinAt(associationPath.toString(), token);
-            if (!joined && persistentProperty instanceof ToMany) {
-                // a collection is joined for a sort as it is for criteria, with an inner join: Hibernate would
-                // fetch it through a left join
-                join.usedByCriteria = true;
-            }
-            currentAlias = join.alias;
+            currentAlias = getOrRegisterJoinAt(associationPath.toString(), token).alias;
             currentEntity = ((Association) persistentProperty).getAssociatedEntity();
         }
         return currentAlias + '.' + tokens[tokens.length - 1];
@@ -795,8 +838,9 @@ public abstract class AbstractHibernateQuery extends Query {
      * <p>
      * Each association is joined once, by its path from the root entity, with the join type that
      * {@link #createJoin(CriteriaAndAlias)} describes. A sort must not change which rows the query
-     * returns, so an association that only a sort uses is joined with a left join. A requested
-     * join type other than a left join is applied whether or not anything else in the query uses the association: a fetch
+     * returns or what it fetches, so an association that only a sort uses is joined with a left
+     * join, and a collection is not fetched through that join. A requested join type other than a
+     * left join is applied whether or not anything else in the query uses the association: a fetch
      * mode alone always joins with an outer join.
      */
     protected void applyDeferredJoins() {
@@ -807,7 +851,7 @@ public abstract class AbstractHibernateQuery extends Query {
             applyOrder(order);
         }
         pendingOrders.clear();
-
+        loadFetchedCollectionsAfterQuery();
         for (CriteriaAndAlias join : pendingJoins) {
             createJoin(join);
         }
@@ -1094,7 +1138,7 @@ public abstract class AbstractHibernateQuery extends Query {
 
         applyDeferredJoins();
         List results = criteria.list();
-
+        GrailsHibernateUtil.initializeCollections(entity, results, collectionsLoadedAfterQuery);
         if (publisher != null) {
             publisher.publishEvent(new PostQueryEvent(datastore, this, results));
         }
@@ -1172,7 +1216,7 @@ public abstract class AbstractHibernateQuery extends Query {
         else {
             result = singleResultViaListCall();
         }
-
+        GrailsHibernateUtil.initializeCollections(entity, Collections.singletonList(result), collectionsLoadedAfterQuery);
         if (publisher != null) {
             publisher.publishEvent(new PostQueryEvent(datastore, this, Collections.singletonList(result)));
         }

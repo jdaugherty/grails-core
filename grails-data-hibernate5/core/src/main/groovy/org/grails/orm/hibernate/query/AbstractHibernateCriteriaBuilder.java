@@ -1594,8 +1594,9 @@ public abstract class AbstractHibernateCriteriaBuilder extends GroovyObjectSuppo
      * of an association is resolved through the alias of the join of the association: a join that the
      * criteria already have for the association is used, and an association that they do not join is
      * joined for the order. It is joined with a left join, so that the order keeps the rows where the
-     * association is null. A collection is joined with an inner join: Hibernate would fetch it
-     * through a left join. An association
+     * association is null. A collection is joined without being fetched, since a row limit would
+     * leave elements out of it, unless the query fetches it or another collection: see
+     * {@link GrailsHibernateUtil#keepsSortedCollectionUnfetched(Criteria, String)}. An association
      * after the first one on the path is joined through the alias of the join before it, so that
      * Hibernate does not read the first association of the path as an alias of the same name.
      */
@@ -1619,8 +1620,13 @@ public abstract class AbstractHibernateCriteriaBuilder extends GroovyObjectSuppo
                 alias = tokens[i] + ALIAS + aliasCount;
                 aliasMap.put(associationPath, alias);
                 String joinPath = parentAlias != null ? parentAlias + '.' + tokens[i] : associationPath;
-                criteria.createAlias(joinPath, alias, property instanceof ToMany ?
-                        org.hibernate.sql.JoinType.INNER_JOIN : org.hibernate.sql.JoinType.LEFT_OUTER_JOIN);
+                if (property instanceof ToMany) {
+                    GrailsHibernateUtil.checkSortedCollection(criteria, associationPath);
+                }
+                criteria.createAlias(joinPath, alias, org.hibernate.sql.JoinType.LEFT_OUTER_JOIN);
+                if (property instanceof ToMany && GrailsHibernateUtil.keepsSortedCollectionUnfetched(criteria, associationPath)) {
+                    GrailsHibernateUtil.keepCollectionUnfetched(criteria, alias);
+                }
             }
             entity = ((Association) property).getAssociatedEntity();
         }
