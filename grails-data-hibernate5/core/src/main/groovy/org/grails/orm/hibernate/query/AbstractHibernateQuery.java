@@ -779,8 +779,9 @@ public abstract class AbstractHibernateQuery extends Query {
                     applyOrder(order.isIgnoreCase() ? relative.ignoreCase() : relative);
                     return;
                 }
-                // neither an alias of this query nor a property of the entity, so there is nothing to sort by: the sort is ignored
-                return;
+                // neither an alias of this query nor a property of the entity, so there is nothing to sort by, and
+                // ignoring the order would hide a misspelled or missing alias
+                throw new IllegalArgumentException("Invalid sort property");
             }
             if (!(persistentProperty instanceof Association)) {
                 // a property that is not an association has no properties to sort by: the sort is ignored

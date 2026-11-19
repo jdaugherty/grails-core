@@ -39,6 +39,27 @@ class UndefinedAliasSortSpec extends GrailsDataTckSpec<GrailsDataHibernate5TckMa
         manager.session.clear()
     }
 
+    void 'a sort by an alias that the query does not define is rejected, whichever way the query is made'() {
+        when:
+        query.call()
+
+        then:
+        IllegalArgumentException e = thrown()
+        e.message == 'Invalid sort property'
+
+        where:
+        description                                   | query
+        'a where query with a criterion on the club'  | { Team.where { club.name ==~ '%e%' }.list(sort: 'c1.name') }
+        'a where query that defines another alias'    | { Team.where { def c1 = club; c1.name ==~ '%e%' }.list(sort: 'c2.name') }
+        'a list without any criterion'                | { Team.list(sort: 'c1.name') }
+        'a dynamic finder'                            | { Team.findAllByNameLike('%', [sort: 'c1.name']) }
+        'a list that does not ignore case'            | { Team.list(sort: 'c1.name', ignoreCase: false) }
+        'an order added to a detached criteria'       | { new DetachedCriteria(Team).build { order('c1.name') }.list() }
+        'a detached criteria that names the team'     | { new DetachedCriteria(Team, 't').list(sort: 'c1.name') }
+        'findAll by example'                          | { Team.findAll(new Team(), [sort: 'c1.name']) }
+        'the sort argument of a criteria query'       | { Team.createCriteria().list(sort: 'c1.name') { } }
+    }
+
     void '#api sorts by a path that starts with the alias of the queried class'() {
         given: 'a team without a club'
         new Team(name: 'Unattached First Team').save(failOnError: true, flush: true)

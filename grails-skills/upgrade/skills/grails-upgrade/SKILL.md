@@ -887,6 +887,14 @@ A sort that starts with the alias that a detached criteria gives the queried cla
 
 - Search for `new DetachedCriteria(` with an alias argument, and for the sorts of those queries. To get the results without a sort, as before, remove the sort.
 
+## GORM for Hibernate: a sort by an alias that the query does not define is rejected
+
+A sort whose path starts with a name that is neither a property of the queried class nor an alias that the query defines, as in `Book.list(sort: 'a.name')`, throws an `IllegalArgumentException` with the message `Invalid sort property` as of 7.0.18. The query ignored such a sort and returned its results unsorted. This applies to where queries, detached criteria, `list`, dynamic finders, `find` and `findAll` with an example, and the `sort` argument of the `list` of a criteria query.
+
+- Search for sorts whose property contains a `.`, such as `sort: 'a.name'`, also where the sort comes from a request parameter, and check that the part before the first `.` is a property of the queried class or an alias that the same query defines.
+- To get the results without a sort, as before, remove the sort, or define the alias in the query, as in `Book.where { def a = author; a.name ==~ 'S%' }.list(sort: 'a.name')`.
+- When the same sort is applied to queries with different criteria, sort by the association path, such as `author.name`, which does not depend on an alias.
+
 ## GORM for Hibernate: a join type requested for an association is always applied
 
 With GORM for Hibernate, a where query, a detached criteria, a dynamic finder or a criteria query can request the type of the join of an association, with the `fetch` argument, as in `Book.where { ... }.list(fetch: [author: JoinType.INNER])`, with `join('author', JoinType.INNER)`, or, on a data service method that queries by its parameters, such as `Book find(String title)`, with `@Join(value = 'author', type = JoinType.INNER)`. In a where query, a detached criteria and a dynamic finder, the requested join type was only used when the query also had criteria on the association, and a criteria query never used it. The association was otherwise fetched with an outer join, whatever join type was requested, so the query also returned the instances whose association is `null`. As of Grails 7.0.18, a requested join type other than `JoinType.LEFT` is applied whether or not anything else in the query uses the association.

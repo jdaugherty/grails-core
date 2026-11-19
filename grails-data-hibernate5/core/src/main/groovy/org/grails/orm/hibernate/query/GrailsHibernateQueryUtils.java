@@ -417,6 +417,10 @@ public class GrailsHibernateQueryUtils {
                 addOrderPossiblyNested(c, null, entity, sortTail, order, ignoreCase);
                 return;
             }
+            if (property == null) {
+                // not a property of the entity, so a sort by it, such as by an alias that the query does not define, can only be a mistake
+                throw new IllegalArgumentException("Invalid sort property");
+            }
             if (property instanceof Embedded) {
                 // embedded objects cannot reference entities (at time of writing), so no more recursion needed
                 addOrder(c, sort, order, ignoreCase);
@@ -471,6 +475,10 @@ public class GrailsHibernateQueryUtils {
             String sortHead = sort.substring(0, firstDotPos);
             String sortTail = sort.substring(firstDotPos + 1);
             final PersistentProperty<? extends Property> property = entity.getPropertyByName(sortHead);
+            if (property == null) {
+                // not a property of the entity, so a sort by it, such as by an alias that the query does not define, can only be a mistake
+                throw new IllegalArgumentException("Invalid sort property");
+            }
             if (property instanceof Embedded) {
                 // embedded objects cannot reference entities (at time of writing), so no more recursion needed
                 final PersistentProperty<? extends Property> associatedProperty = ((Embedded<?>) property).getAssociatedEntity().getPropertyByName(sortTail);

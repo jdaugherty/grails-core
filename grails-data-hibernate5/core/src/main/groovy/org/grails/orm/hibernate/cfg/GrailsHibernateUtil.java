@@ -283,6 +283,11 @@ public class GrailsHibernateUtil extends HibernateRuntimeUtils {
                     property = property.substring(firstDotPos + 1);
                     continue;
                 }
+                if (aliased == null) {
+                    // neither a property of the queried class nor an alias that the criteria define, so a sort by it
+                    // can only be a mistake
+                    throw new IllegalArgumentException("Invalid sort property");
+                }
             }
             if (persistentProperty instanceof Embedded) {
                 // embedded objects cannot reference entities (at time of writing), so the rest is a component path
