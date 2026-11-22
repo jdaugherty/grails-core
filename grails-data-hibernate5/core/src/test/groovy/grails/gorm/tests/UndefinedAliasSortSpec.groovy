@@ -24,9 +24,13 @@ import org.apache.grails.data.testing.tck.base.GrailsDataTckSpec
 
 class UndefinedAliasSortSpec extends GrailsDataTckSpec<GrailsDataHibernate5TckManager> {
 
+    protected boolean isLeftJoinSort() {
+        true
+    }
+
     void setupSpec() {
         // a sort through an association keeps the instances without it with this setting
-        manager.configuration['grails.gorm.leftJoinAssociationSort'] = true
+        manager.configuration['grails.gorm.leftJoinAssociationSort'] = leftJoinSort
         manager.domainClasses.addAll([Club, Team, Player, Contract])
     }
 
@@ -58,6 +62,13 @@ class UndefinedAliasSortSpec extends GrailsDataTckSpec<GrailsDataHibernate5TckMa
         'a detached criteria that names the team'     | { new DetachedCriteria(Team, 't').list(sort: 'c1.name') }
         'findAll by example'                          | { Team.findAll(new Team(), [sort: 'c1.name']) }
         'the sort argument of a criteria query'       | { Team.createCriteria().list(sort: 'c1.name') { } }
+        'a count with a stored sort'                  | { Team.where { name != null }.sort('c1.name').count() }
+        'a get with a stored sort'                    | { Team.where { name != null }.sort('c1.name').get() }
+        'a descending paged list'                     | { Team.list(sort: 'c1.name', order: 'desc', max: 2) }
+        'a map of sorts'                             | { Team.list(sort: ['c1.name': 'desc']) }
+        'an invalid association property'            | { new DetachedCriteria(Team).list(sort: 'club.unknown') }
+        'an invalid nested association path'         | { new DetachedCriteria(Team).list(sort: 'club.x.name') }
+        'an invalid property after a declared alias' | { Team.where { def c = club; c.name != null }.list(sort: 'c.unknown') }
     }
 
     void '#api sorts by a path that starts with the alias of the queried class'() {
@@ -89,7 +100,35 @@ class UndefinedAliasSortSpec extends GrailsDataTckSpec<GrailsDataHibernate5TckMa
         results.totalCount == 3
     }
 
-    void 'a sort through an association after the alias of the queried class keeps a team without the association'() {
+    void 'a root alias named #alias is used when the path does not resolve through a property'() {
+        given:
+        final criteria = new DetachedCriteria(Team, alias)
+
+        expect:
+        criteria.list(sort: property, order: 'desc')*.name == expected
+        criteria.sort(property, 'desc').list()*.name == expected
+
+        where:
+        alias  | property         | expected
+        'club' | 'club.club.name' | ['Manchester United First Team', 'Chelsea First Team', 'Arsenal First Team']
+        'name' | 'name.name'      | ['Manchester United First Team', 'Chelsea First Team', 'Arsenal First Team']
+    }
+
+    void 'an association path keeps its meaning when the root alias has the same name'() {
+        given:
+        new Team(name: 'Alias Z', club: Club.findByName('Arsenal')).save(failOnError: true)
+        new Team(name: 'Alias A', club: Club.findByName('Chelsea')).save(failOnError: true)
+        new Team(name: 'Alias M').save(failOnError: true, flush: true)
+        manager.session.clear()
+        final criteria = new DetachedCriteria(Team, 'club').like('name', 'Alias%')
+
+        expect:
+        criteria.list(sort: 'club.name')*.name - 'Alias M' == ['Alias Z', 'Alias A']
+        criteria.sort('club.name').list()*.name - 'Alias M' == ['Alias Z', 'Alias A']
+        criteria.list(sort: 'club.name', max: 10).totalCount == (leftJoinSort ? 3 : 2)
+    }
+
+    void 'a root-alias sort through an association follows the compatibility setting'() {
         given:
         new Team(name: 'Unattached First Team').save(failOnError: true, flush: true)
         manager.session.clear()
@@ -98,7 +137,7 @@ class UndefinedAliasSortSpec extends GrailsDataTckSpec<GrailsDataHibernate5TckMa
         final results = new DetachedCriteria(Team, 't').list(sort: 't.club.name', order: 'desc')
 
         then:
-        'Unattached First Team' in results*.name
+        ('Unattached First Team' in results*.name) == leftJoinSort
         results*.name - 'Unattached First Team' == ['Manchester United First Team', 'Chelsea First Team', 'Arsenal First Team']
     }
 

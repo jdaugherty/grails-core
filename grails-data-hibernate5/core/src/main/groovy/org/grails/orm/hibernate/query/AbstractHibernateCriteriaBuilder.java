@@ -364,7 +364,7 @@ public abstract class AbstractHibernateCriteriaBuilder extends GroovyObjectSuppo
 
     /**
      * Applies the join types requested with {@link #join(String, JoinType)}. This happens once the
-     * criteria are built, so that an association that the criteria join themselves keeps that join.
+     * criteria are built, so that the requested type also applies to a join created by a block or alias.
      */
     private void applyRequestedJoinTypes() {
         for (Map.Entry<String, JoinType> requestedJoinType : requestedJoinTypes.entrySet()) {
@@ -1538,7 +1538,7 @@ public abstract class AbstractHibernateCriteriaBuilder extends GroovyObjectSuppo
      */
     private void requestOrder(String propertyName, Function<String, Order> orderFactory) {
         String[] tokens = propertyName.split("\\.");
-        if (tokens.length == 1 || datastore == null || aliasMap.containsValue(tokens[0]) || isAssociationIdentifier(tokens)) {
+        if (tokens.length == 1 || datastore == null || tokens.length == 2 && aliasMap.containsValue(tokens[0]) || isAssociationIdentifier(targetClass, tokens)) {
             // a property of the queried class, a path from an alias, or a path that needs no join
             requestedOrders.add(new RequestedOrder(orderFactory.apply(calculatePropertyName(propertyName))));
         }
@@ -1555,11 +1555,11 @@ public abstract class AbstractHibernateCriteriaBuilder extends GroovyObjectSuppo
      * key of a one-to-one that the other class refers back with, such as a {@code hasOne}, is in the
      * table of the other class, so such an association is joined.
      */
-    private boolean isAssociationIdentifier(String[] tokens) {
+    private boolean isAssociationIdentifier(Class<?> owner, String[] tokens) {
         if (tokens.length != 2) {
             return false;
         }
-        PersistentEntity entity = datastore.getMappingContext().getPersistentEntity(targetClass.getName());
+        PersistentEntity entity = datastore.getMappingContext().getPersistentEntity(owner.getName());
         PersistentProperty property = entity != null ? entity.getPropertyByName(tokens[0]) : null;
         if (!(property instanceof ToOne) || property instanceof Embedded) {
             return false;
@@ -1569,7 +1569,7 @@ public abstract class AbstractHibernateCriteriaBuilder extends GroovyObjectSuppo
         if (identity == null || !identity.getName().equals(tokens[1])) {
             return false;
         }
-        Type type = ((SessionFactoryImplementor) sessionFactory).getMetamodel().entityPersister(targetClass.getName()).getPropertyType(tokens[0]);
+        Type type = ((SessionFactoryImplementor) sessionFactory).getMetamodel().entityPersister(owner.getName()).getPropertyType(tokens[0]);
         return type instanceof ManyToOneType;
     }
 
@@ -1606,6 +1606,25 @@ public abstract class AbstractHibernateCriteriaBuilder extends GroovyObjectSuppo
         PersistentEntity entity = datastore.getMappingContext().getPersistentEntity(requested.targetClass.getName());
         String associationPath = requested.associationPath;
         String alias = requested.alias;
+        for (Map.Entry<String, String> aliased : aliasMap.entrySet()) {
+            if (tokens[0].equals(aliased.getValue())) {
+                entity = datastore.getMappingContext().getPersistentEntity(targetClass.getName());
+                for (String association : aliased.getKey().split("\\.")) {
+                    PersistentProperty property = entity != null ? entity.getPropertyByName(association) : null;
+                    entity = property instanceof Association ? ((Association) property).getAssociatedEntity() : null;
+                }
+                if (entity == null) {
+                    return String.join(".", tokens);
+                }
+                associationPath = aliased.getKey();
+                alias = tokens[0];
+                tokens = Arrays.copyOfRange(tokens, 1, tokens.length);
+                if (isAssociationIdentifier(entity.getJavaClass(), tokens)) {
+                    return alias + '.' + String.join(".", tokens);
+                }
+                break;
+            }
+        }
         for (int i = 0; i < tokens.length - 1; i++) {
             PersistentProperty property = entity != null ? entity.getPropertyByName(tokens[i]) : null;
             if (!(property instanceof Association) || property instanceof Embedded) {
@@ -1898,6 +1917,12 @@ public abstract class AbstractHibernateCriteriaBuilder extends GroovyObjectSuppo
                 orderEntries = new ArrayList<>();
                 invokeClosureNode(args[1]);
                 listArguments = applyFetchArgument((Map) args[0]);
+                if (listArguments.containsKey(HibernateQueryConstants.ARGUMENT_MAX)) {
+                    criteria.setMaxResults(conversionService.convert(listArguments.get(HibernateQueryConstants.ARGUMENT_MAX), Integer.class));
+                }
+                if (listArguments.containsKey(HibernateQueryConstants.ARGUMENT_OFFSET)) {
+                    criteria.setFirstResult(conversionService.convert(listArguments.get(HibernateQueryConstants.ARGUMENT_OFFSET), Integer.class));
+                }
             }
             else {
                 invokeClosureNode(args[0]);

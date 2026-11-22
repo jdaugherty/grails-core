@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -44,6 +45,7 @@ import org.hibernate.criterion.CriteriaSpecification;
 import org.hibernate.criterion.DetachedCriteria;
 import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.criterion.RowCountProjection;
 import org.hibernate.criterion.SimpleExpression;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.dialect.function.SQLFunction;
@@ -762,39 +764,46 @@ public abstract class AbstractHibernateQuery extends Query {
     private void applyOrder(Order order) {
         String property = order.getProperty();
         int i = property.indexOf('.');
+        String rootAlias = criteria != null ? criteria.getAlias() : detachedCriteria.getAlias();
+        if (i > 0 && property.substring(0, i).equals(rootAlias) && !isAssociationSortPath(entity, property)) {
+            // Strip the root alias once: the remaining path can start with a property of the same name.
+            property = property.substring(i + 1);
+            i = property.indexOf('.');
+        }
         if (i < 0) {
             addSimpleOrder(order, property);
             return;
         }
 
         String sortHead = property.substring(0, i);
-        if (!createdAssociationPaths.containsKey(sortHead)) {
-            PersistentProperty persistentProperty = entity.getPropertyByName(sortHead);
-            if (persistentProperty == null) {
-                String rootAlias = criteria != null ? criteria.getAlias() : detachedCriteria.getAlias();
-                if (sortHead.equals(rootAlias)) {
-                    // the alias of the queried class, as in new DetachedCriteria(Book, 'b'): the rest of the path
-                    // starts from the queried class
-                    Order relative = new Order(property.substring(i + 1), order.getDirection());
-                    applyOrder(order.isIgnoreCase() ? relative.ignoreCase() : relative);
-                    return;
-                }
-                // neither an alias of this query nor a property of the entity, so there is nothing to sort by, and
-                // ignoring the order would hide a misspelled or missing alias
-                throw new IllegalArgumentException("Invalid sort property");
-            }
-            if (!(persistentProperty instanceof Association)) {
-                // a property that is not an association has no properties to sort by: the sort is ignored
-                return;
-            }
-            if (persistentProperty instanceof Embedded) {
-                // a component path, which Hibernate resolves against the entity itself
-                addSimpleOrder(order, property);
-                return;
-            }
+        CriteriaAndAlias declared = createdAssociationPaths.get(sortHead);
+        PersistentEntity sortEntity = declared != null ? getAssociatedEntity(declared.associationPath) : entity;
+        String sortPath = declared != null ? property.substring(i + 1) : property;
+        if (!isAssociationSortPath(sortEntity, sortPath)) {
+            throw new IllegalArgumentException("Invalid sort property");
+        }
+        if (declared == null && entity.getPropertyByName(sortHead) instanceof Embedded) {
+            // a component path, which Hibernate resolves against the entity itself
+            addSimpleOrder(order, property);
+            return;
         }
 
         addAliasedOrder(order, calculateSortPropertyName(property));
+    }
+
+    private boolean isAssociationSortPath(PersistentEntity current, String path) {
+        String[] tokens = path.split("\\.");
+        for (int i = 0; i < tokens.length; i++) {
+            PersistentProperty property = current != null ? current.getPropertyByName(tokens[i]) : null;
+            if (i == tokens.length - 1) {
+                return property != null || current != null && current.getIdentity() != null && current.getIdentity().getName().equals(tokens[i]);
+            }
+            if (!(property instanceof Association)) {
+                return false;
+            }
+            current = ((Association) property).getAssociatedEntity();
+        }
+        return false;
     }
 
     /**
@@ -946,6 +955,19 @@ public abstract class AbstractHibernateQuery extends Query {
         }
         if (criteria != null) {
             GrailsHibernateUtil.fetchAssociationsBefore(criteria, associationPath);
+            CriteriaImpl root = criteria instanceof CriteriaImpl ? (CriteriaImpl) criteria : null;
+            if (root != null && (root.getMaxResults() != null || root.getFirstResult() != null && root.getFirstResult() > 0)) {
+                boolean collection = false;
+                String path = "";
+                for (int i = 0; i < tokens.length; i++) {
+                    path = i == 0 ? tokens[i] : path + '.' + tokens[i];
+                    collection |= associations[i] instanceof ToMany;
+                    if (collection) {
+                        // SQL pagination limits joined rows, which would initialize a partial collection.
+                        criteria.setFetchMode(path, FetchMode.SELECT);
+                    }
+                }
+            }
         }
         if (joinType == JoinType.LEFT) {
             return;
@@ -978,10 +1000,6 @@ public abstract class AbstractHibernateQuery extends Query {
         return association != null ? association.getAssociatedEntity() : null;
     }
 
-    /**
-     * Returns the association at the end of an association path from the root entity, or null when
-     * the path does not consist of associations only.
-     */
     private Association getAssociation(String associationPath) {
         String path = associationPath;
         if (alias != null && path.startsWith(alias + '.')) {
@@ -1191,7 +1209,23 @@ public abstract class AbstractHibernateQuery extends Query {
         }
 
         applyDeferredJoins();
+        boolean keepNullRows = joinTypes.containsValue(JoinType.RIGHT) &&
+                (hibernateProjectionList == null || hibernateProjectionList.isEmpty());
+        if (keepNullRows) {
+            criteria.setResultTransformer(CriteriaSpecification.ROOT_ENTITY);
+        }
         List results = criteria.list();
+        if (keepNullRows) {
+            Set<Object> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+            List distinct = new ArrayList(results.size());
+            for (Object result : results) {
+                if (result == null || seen.add(result)) {
+                    distinct.add(result);
+                }
+            }
+            results = distinct;
+        }
+
         GrailsHibernateUtil.initializeCollections(entity, results, collectionsLoadedAfterQuery);
         if (publisher != null) {
             publisher.publishEvent(new PostQueryEvent(datastore, this, results));
@@ -1205,8 +1239,9 @@ public abstract class AbstractHibernateQuery extends Query {
      * that the orders made are kept, so that the query counts the rows that it lists.
      */
     private void removeOrdersOfRowCount() {
-        if (hibernateProjectionList == null || !hibernateProjectionList.isRowCount() ||
-                hibernateProjectionList.getHibernateProjectionList().getLength() != 1 || !(criteria instanceof CriteriaImpl)) {
+        if (hibernateProjectionList == null || hibernateProjectionList.getHibernateProjectionList().getLength() != 1 ||
+                !(hibernateProjectionList.getHibernateProjectionList().getProjection(0) instanceof RowCountProjection) ||
+                !(criteria instanceof CriteriaImpl)) {
             return;
         }
         Iterator<CriteriaImpl.OrderEntry> orders = ((CriteriaImpl) criteria).iterateOrderings();
